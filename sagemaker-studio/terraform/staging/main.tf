@@ -11,12 +11,13 @@ terraform {
     }
   }
 
-  # Uncomment and configure for remote state management
-  # backend "s3" {
-  #   bucket = "your-terraform-state-bucket"
-  #   key    = "sagemaker-studio/staging/terraform.tfstate"
-  #   region = "us-east-1"
-  # }
+  # Remote state management (configure TF_BACKEND_BUCKET secret to enable)
+  backend "s3" {
+    # These values will be provided via -backend-config in CI/CD
+    # bucket = "configured-via-backend-config"
+    # key    = "configured-via-backend-config" 
+    # region = "configured-via-backend-config"
+  }
 }
 
 # Configure the AWS provider
