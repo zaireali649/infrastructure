@@ -16,7 +16,7 @@ AWS_SECRET_ACCESS_KEY: your-secret-key
 
 #### Optional Secrets (with defaults)
 ```
-VPC_NAME: staging-vpc
+VPC_ID: vpc-xxxxxxxxx
 BUCKET_NAME_SUFFIX: zali-staging
 TF_BACKEND_BUCKET: your-terraform-state-bucket
 ```
@@ -64,7 +64,7 @@ Edit `terraform.tfvars` to match your environment:
 ```hcl
 # Update these values
 aws_region = "your-preferred-region"
-vpc_name   = "your-vpc-name"
+vpc_id     = "vpc-xxxxxxxxx"
 bucket_name_suffix = "your-unique-suffix"
 ```
 

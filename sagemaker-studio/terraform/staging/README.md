@@ -69,7 +69,7 @@ terraform destroy
 ```hcl
 # AWS Settings
 aws_region = "us-east-1"
-vpc_name   = "staging-vpc"
+vpc_id     = "vpc-xxxxxxxxx"
 
 # User Configuration
 user_profile_name  = "zali"
@@ -95,7 +95,7 @@ To customize the deployment, modify `terraform.tfvars`:
 aws_region = "us-west-2"
 
 # Use different VPC
-vpc_name = "my-custom-vpc"
+vpc_id = "vpc-yyyyyyyyyy"
 
 # Upgrade instance types for better performance
 jupyter_instance_type = "ml.m5.large"
@@ -119,7 +119,7 @@ Configure these repository secrets for GitHub Actions deployment:
 
 | Secret Name | Description | Default Value |
 |-------------|-------------|---------------|
-| `VPC_NAME` | Name of the VPC to deploy into | `staging-vpc` |
+| `VPC_ID` | VPC ID to deploy into | `vpc-xxxxxxxxx` |
 | `BUCKET_NAME_SUFFIX` | Unique suffix for S3 bucket | `zali-staging` |
 | `TF_BACKEND_BUCKET` | S3 bucket for Terraform state | Uses local state |
 
@@ -227,7 +227,7 @@ Current configuration is optimized for staging costs:
 ```
 Error: no matching VPC found
 ```
-**Solution**: Update `vpc_name` in terraform.tfvars or create VPC with correct name tag.
+**Solution**: Update `vpc_id` in terraform.tfvars with your actual VPC ID.
 
 #### 2. Subnet Issues
 ```

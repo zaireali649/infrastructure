@@ -97,7 +97,7 @@ jobs:
       id: plan
       run: |
         # Set additional variables from secrets
-        export TF_VAR_vpc_name="${{ secrets.VPC_NAME || 'default-vpc' }}"
+        export TF_VAR_vpc_id="${{ secrets.VPC_ID }}"
         export TF_VAR_bucket_name_suffix="${{ secrets.BUCKET_NAME_SUFFIX || 'zali-staging' }}"
         
         terraform plan -no-color -input=false -out=tfplan
@@ -159,7 +159,7 @@ jobs:
         (github.ref == 'refs/heads/main' && github.event_name == 'push') || 
         (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply')
       run: |
-        export TF_VAR_vpc_name="${{ secrets.VPC_NAME || 'staging-vpc' }}"
+        export TF_VAR_vpc_id="${{ secrets.VPC_ID }}"
         export TF_VAR_bucket_name_suffix="${{ secrets.BUCKET_NAME_SUFFIX || 'zali-staging' }}"
         
         terraform apply -auto-approve tfplan
@@ -171,7 +171,7 @@ jobs:
       id: destroy
       if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'
       run: |
-        export TF_VAR_vpc_name="${{ secrets.VPC_NAME || 'staging-vpc' }}"
+        export TF_VAR_vpc_id="${{ secrets.VPC_ID }}"
         export TF_VAR_bucket_name_suffix="${{ secrets.BUCKET_NAME_SUFFIX || 'zali-staging' }}"
         
         terraform destroy -auto-approve

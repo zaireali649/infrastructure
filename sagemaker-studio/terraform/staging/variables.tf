@@ -6,10 +6,10 @@ variable "aws_region" {
   default     = "us-east-1"
 }
 
-variable "vpc_name" {
-  description = "Name of the VPC to deploy SageMaker Studio into"
+variable "vpc_id" {
+  description = "VPC ID to deploy SageMaker Studio into"
   type        = string
-  default     = "staging-vpc"
+  default     = null
 }
 
 variable "bucket_name_suffix" {

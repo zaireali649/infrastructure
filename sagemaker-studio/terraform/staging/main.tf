@@ -34,16 +34,13 @@ data "aws_region" "current" {}
 
 # Data sources for VPC and subnets
 data "aws_vpc" "main" {
-  filter {
-    name   = "tag:Name"
-    values = [var.vpc_name]
-  }
+  id = var.vpc_id
 }
 
 data "aws_subnets" "private" {
   filter {
     name   = "vpc-id"
-    values = [data.aws_vpc.main.id]
+    values = [var.vpc_id]
   }
 
   tags = {
@@ -73,7 +70,7 @@ module "sagemaker_studio" {
   project_name        = local.project_name
   environment         = local.environment
   bucket_name_suffix  = var.bucket_name_suffix
-  vpc_id              = data.aws_vpc.main.id
+  vpc_id              = var.vpc_id
   subnet_ids          = data.aws_subnets.private.ids
 
   # User configuration

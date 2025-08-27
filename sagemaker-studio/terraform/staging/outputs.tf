@@ -67,7 +67,7 @@ output "aws_account_id" {
 
 output "vpc_id" {
   description = "VPC ID where SageMaker Studio is deployed"
-  value       = data.aws_vpc.main.id
+  value       = var.vpc_id
 }
 
 output "subnet_ids" {
