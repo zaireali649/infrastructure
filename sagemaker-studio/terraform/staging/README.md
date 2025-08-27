@@ -112,7 +112,8 @@ Configure these repository secrets for GitHub Actions deployment:
 
 | Secret Name | Description | Example |
 |-------------|-------------|---------|
-| `AWS_ROLE_ARN` | IAM role ARN for OIDC authentication | `arn:aws:iam::123456789012:role/github-actions-role` |
+| `AWS_ACCESS_KEY_ID` | AWS access key ID | `AKIA...` |
+| `AWS_SECRET_ACCESS_KEY` | AWS secret access key | `your-secret-key` |
 
 ### Optional Secrets
 
@@ -122,19 +123,16 @@ Configure these repository secrets for GitHub Actions deployment:
 | `BUCKET_NAME_SUFFIX` | Unique suffix for S3 bucket | `zali-staging` |
 | `TF_BACKEND_BUCKET` | S3 bucket for Terraform state | Uses local state |
 
-### AWS Authentication Options
+### AWS Authentication
 
-#### Option 1: OIDC (Recommended)
-```yaml
-# GitHub Actions will use this role
-AWS_ROLE_ARN: arn:aws:iam::ACCOUNT-ID:role/github-actions-role
-```
+Using AWS access keys for authentication:
 
-#### Option 2: Access Keys (Alternative)
 ```yaml
 AWS_ACCESS_KEY_ID: AKIA...
-AWS_SECRET_ACCESS_KEY: secret...
+AWS_SECRET_ACCESS_KEY: your-secret-key
 ```
+
+**Note**: For enhanced security in production, consider using OIDC authentication instead.
 
 ## 📦 Outputs
 
