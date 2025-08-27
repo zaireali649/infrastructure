@@ -16,7 +16,7 @@ AWS_SECRET_ACCESS_KEY: your-secret-key
 
 #### Optional Secrets (with defaults)
 ```
-VPC_ID: vpc-xxxxxxxxx
+# VPC_ID: Optional - defaults to vpc-0a9ee577 in staging
 BUCKET_NAME_SUFFIX: zali-staging
 TF_BACKEND_BUCKET: your-terraform-state-bucket
 ```

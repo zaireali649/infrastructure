@@ -63,7 +63,7 @@ module "sagemaker_studio" {
   project_name       = local.project_name
   environment        = local.environment
   bucket_name_suffix = var.bucket_name_suffix
-  vpc_id             = var.vpc_id
+  vpc_id             = var.vpc_id  # Hardcoded to vpc-0a9ee577 in variables.tf
   subnet_ids         = local.selected_subnet_ids
 
   # User configuration

@@ -5,8 +5,8 @@
 aws_region = "us-east-1" # Update this to your preferred region
 
 # Network Configuration
-# Update these values to match your actual VPC and subnet IDs
-vpc_id     = "vpc-xxxxxxxxx"                          # Your VPC ID
+# VPC ID has a default value of vpc-0a9ee577 in variables.tf (can be overridden)
+# vpc_id = "vpc-0a9ee577"  # Uncomment to override default
 subnet_ids = ["subnet-xxxxxxxxx", "subnet-yyyyyyyyy"] # Your subnet IDs (required)
 
 # Project Configuration

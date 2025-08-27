@@ -9,6 +9,7 @@ variable "aws_region" {
 variable "vpc_id" {
   description = "VPC ID to deploy SageMaker Studio into"
   type        = string
+  default     = "vpc-0a9ee577"  # Hardcoded for staging to bypass provider issues
 
   validation {
     condition     = can(regex("^vpc-[a-z0-9]{8,17}$", var.vpc_id))
