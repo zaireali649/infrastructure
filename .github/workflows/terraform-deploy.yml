@@ -81,9 +81,12 @@ jobs:
         # Initialize with backend configuration from secrets if provided
         if [ -n "${{ secrets.TF_BACKEND_BUCKET }}" ]; then
           echo "🗄️ Using S3 backend: ${{ secrets.TF_BACKEND_BUCKET }}"
+          echo "📂 State key: ${{ inputs.terraform-working-directory }}/terraform.tfstate"
+          echo "🌍 Region: ${{ env.AWS_REGION }}"
+          
           terraform init \
             -backend-config="bucket=${{ secrets.TF_BACKEND_BUCKET }}" \
-            -backend-config="key=${{ inputs.project }}/${{ inputs.terraform-environment }}/${{ inputs.environment }}/terraform.tfstate" \
+            -backend-config="key=${{ inputs.terraform-working-directory }}/terraform.tfstate" \
             -backend-config="region=${{ env.AWS_REGION }}"
         else
           echo "⚠️ Using local backend (not recommended for production)"
