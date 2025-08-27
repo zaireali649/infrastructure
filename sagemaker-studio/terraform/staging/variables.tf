@@ -17,9 +17,20 @@ variable "vpc_id" {
 }
 
 variable "subnet_ids" {
-  description = "List of subnet IDs for SageMaker Studio (if not provided, will auto-discover private subnets)"
+  description = "List of subnet IDs for SageMaker Studio"
   type        = list(string)
-  default     = []
+  
+  validation {
+    condition     = length(var.subnet_ids) > 0
+    error_message = "At least one subnet ID must be provided."
+  }
+  
+  validation {
+    condition = alltrue([
+      for subnet_id in var.subnet_ids : can(regex("^subnet-[a-z0-9]{8,17}$", subnet_id))
+    ])
+    error_message = "All subnet IDs must be in the format subnet-xxxxxxxxx."
+  }
 }
 
 variable "bucket_name_suffix" {
