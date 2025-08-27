@@ -120,6 +120,40 @@ jobs:
         echo "✓ VPC ID secret is configured and format is valid"
         echo "✓ Region: $TF_VAR_aws_region"
         
+        # Test AWS connectivity and VPC existence
+        echo "🔍 Testing AWS connectivity..."
+        aws sts get-caller-identity
+        
+        echo "🔍 Checking if VPC exists in region $TF_VAR_aws_region..."
+        if aws ec2 describe-vpcs --vpc-ids "$TF_VAR_vpc_id" --region "$TF_VAR_aws_region" >/dev/null 2>&1; then
+          echo "✅ VPC found in region $TF_VAR_aws_region"
+          
+          # Get VPC details
+          echo "📋 VPC Details:"
+          aws ec2 describe-vpcs --vpc-ids "$TF_VAR_vpc_id" --region "$TF_VAR_aws_region" \
+            --query 'Vpcs[0].[VpcId,State,CidrBlock,IsDefault]' --output table
+          
+          # Check subnets in VPC
+          echo "📋 Subnets in VPC:"
+          aws ec2 describe-subnets --filters "Name=vpc-id,Values=$TF_VAR_vpc_id" --region "$TF_VAR_aws_region" \
+            --query 'Subnets[*].[SubnetId,AvailabilityZone,CidrBlock,State]' --output table
+        else
+          echo "❌ VPC not found in region $TF_VAR_aws_region"
+          echo "🔍 Error details:"
+          aws ec2 describe-vpcs --vpc-ids "$TF_VAR_vpc_id" --region "$TF_VAR_aws_region" 2>&1 || true
+          
+          echo "🔍 Checking other common regions..."
+          for region in us-east-1 us-west-1 us-west-2 eu-west-1 ap-southeast-1; do
+            if [ "$region" != "$TF_VAR_aws_region" ]; then
+              if aws ec2 describe-vpcs --vpc-ids "$TF_VAR_vpc_id" --region "$region" >/dev/null 2>&1; then
+                echo "🔍 VPC found in region: $region"
+              fi
+            fi
+          done
+          echo "❌ Please check your VPC ID and region configuration"
+          exit 1
+        fi
+        
         terraform plan -no-color -input=false -out=tfplan
       env:
         TF_VAR_github_repository: ${{ github.repository }}
