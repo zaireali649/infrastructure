@@ -1,11 +1,6 @@
 # SageMaker Studio Staging Environment
 # This configuration deploys SageMaker Studio using the reusable module
 
-provider "aws" {
-  region = "us-east-1"
-}
-
-
 # Configure the AWS provider
 provider "aws" {
   region = var.aws_region
