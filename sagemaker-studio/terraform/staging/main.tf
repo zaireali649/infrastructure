@@ -43,7 +43,7 @@ locals {
   project_name = "sagemaker-studio"
   environment  = "staging"
 
-  # Use provided subnet_ids directly - no auto-discovery to avoid data source issues
+  # Auto-discovery will be handled by the module
   selected_subnet_ids = var.subnet_ids
 
   common_tags = merge(var.additional_tags, {
