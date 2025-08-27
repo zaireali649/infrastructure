@@ -19,11 +19,11 @@ user_profile_name = "zali"
 auth_mode               = "IAM"
 app_network_access_type = "PublicInternetOnly" # Change to "VpcOnly" for production
 
-# Instance Types (optimized for staging/cost)
-default_instance_type        = "ml.t3.medium"
-jupyter_instance_type        = "ml.t3.medium"
+# Instance Types (updated for SageMaker Studio compatibility)
+default_instance_type        = "system"
+jupyter_instance_type        = "system"
 kernel_gateway_instance_type = "ml.t3.medium"
-tensorboard_instance_type    = "ml.t3.medium"
+tensorboard_instance_type    = "system"
 
 # S3 Configuration
 enable_s3_bucket = true
