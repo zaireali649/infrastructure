@@ -9,45 +9,50 @@ permissions:
   id-token: write
 
 jobs:
-  terraform-plan:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - project: ml
-            terraform-environment: staging
-            project-folder: sagemaker-studio
-          - project: ml
-            terraform-environment: staging
-            project-folder: mlflow
+  plan-sagemaker-studio:
     uses: ./.github/workflows/terraform-plan.yml
     secrets: inherit
     with:
-      environment: "${{ matrix.project-folder }}-${{ matrix.terraform-environment }}"
-      terraform-environment: ${{ matrix.terraform-environment }}
-      terraform-working-directory: "${{matrix.project-folder}}/terraform/${{matrix.terraform-environment}}"
-      aws-environment: ${{ matrix.terraform-environment }}
-      project: ${{ matrix.project }}
+      environment: "sagemaker-studio-staging"
+      terraform-environment: staging
+      terraform-working-directory: "sagemaker-studio/terraform/staging"
+      aws-environment: staging
+      project: ml
       aws-role-name: mlops-github
 
-  terraform-apply:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - project: ml
-            terraform-environment: staging
-            project-folder: sagemaker-studio
-          - project: ml
-            terraform-environment: staging
-            project-folder: mlflow
+  plan-mlflow:
+    uses: ./.github/workflows/terraform-plan.yml
+    secrets: inherit
+    with:
+      environment: "mlflow-staging"
+      terraform-environment: staging
+      terraform-working-directory: "mlflow/terraform/staging"
+      aws-environment: staging
+      project: ml
+      aws-role-name: mlops-github
+
+  apply-sagemaker-studio:
     uses: ./.github/workflows/terraform-deploy.yml
     secrets: inherit
-    needs: terraform-plan
+    needs: plan-sagemaker-studio
+    if: needs.plan-sagemaker-studio.result == 'success'
     with:
-      environment: "${{ matrix.project-folder }}-${{ matrix.terraform-environment }}"
-      terraform-environment: ${{ matrix.terraform-environment }}
-      terraform-working-directory: "${{matrix.project-folder}}/terraform/${{matrix.terraform-environment}}"
-      aws-environment: ${{ matrix.terraform-environment }}
-      project: ${{ matrix.project }}
+      environment: "sagemaker-studio-staging"
+      terraform-environment: staging
+      terraform-working-directory: "sagemaker-studio/terraform/staging"
+      aws-environment: staging
+      project: ml
+      aws-role-name: mlops-github
+
+  apply-mlflow:
+    uses: ./.github/workflows/terraform-deploy.yml
+    secrets: inherit
+    needs: plan-mlflow
+    if: needs.plan-mlflow.result == 'success'
+    with:
+      environment: "mlflow-staging"
+      terraform-environment: staging
+      terraform-working-directory: "mlflow/terraform/staging"
+      aws-environment: staging
+      project: ml
       aws-role-name: mlops-github
