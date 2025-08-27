@@ -70,7 +70,7 @@ output "debug_info" {
     vpc_id_last4          = substr(var.vpc_id, length(var.vpc_id) - 4, 4)
     subnet_ids_provided   = var.subnet_ids
     subnet_ids_count      = length(var.subnet_ids)
-    discovered_subnets    = "auto-discovery disabled"
+    discovered_subnets    = length(var.subnet_ids) == 0 ? data.aws_subnets.vpc_subnets[0].ids : []
     selected_subnets      = local.selected_subnet_ids
     aws_region           = data.aws_region.current.name
   }
