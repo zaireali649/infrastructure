@@ -100,20 +100,20 @@ jobs:
     - name: Terraform Plan
       id: plan
       run: |
-          # Set additional variables from secrets
-          # VPC ID is now hardcoded in the module, no need for VPC_ID secret
-          export TF_VAR_bucket_name_suffix="${{ secrets.BUCKET_NAME_SUFFIX || 'zali-staging' }}"
-          
-          # Set subnet IDs (now required)
-          if [ -n "${{ secrets.SUBNET_IDS }}" ]; then
-            export TF_VAR_subnet_ids='[${{ secrets.SUBNET_IDS }}]'
-          else
-            echo "ERROR: SUBNET_IDS secret is required but not set"
-            echo "Please set SUBNET_IDS secret with comma-separated subnet IDs: \"subnet-xxx\",\"subnet-yyy\""
-            exit 1
-          fi
-          
-          echo "ℹ️  Using hardcoded VPC ID: vpc-0a9ee577"
+        # Set additional variables from secrets
+        # VPC ID is now hardcoded in the module, no need for VPC_ID secret
+        export TF_VAR_bucket_name_suffix="${{ secrets.BUCKET_NAME_SUFFIX || 'zali-staging' }}"
+        
+        # Set subnet IDs (now required)
+        if [ -n "${{ secrets.SUBNET_IDS }}" ]; then
+          export TF_VAR_subnet_ids='[${{ secrets.SUBNET_IDS }}]'
+        else
+          echo "ERROR: SUBNET_IDS secret is required but not set"
+          echo "Please set SUBNET_IDS secret with comma-separated subnet IDs: \"subnet-xxx\",\"subnet-yyy\""
+          exit 1
+        fi
+        
+        echo "ℹ️  Using hardcoded VPC ID: vpc-0a9ee577"
         
         terraform plan -no-color -input=false -out=tfplan
       env:
