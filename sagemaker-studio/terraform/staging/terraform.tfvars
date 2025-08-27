@@ -7,7 +7,7 @@ aws_region = "us-east-1"  # Update this to your preferred region
 # Network Configuration
 # Update these values to match your actual VPC and subnet IDs
 vpc_id = "vpc-xxxxxxxxx"  # Your VPC ID
-subnet_ids = ["subnet-xxxxxxxxx", "subnet-yyyyyyyyy"]  # Your subnet IDs (leave empty to auto-discover all subnets)
+subnet_ids = ["subnet-xxxxxxxxx", "subnet-yyyyyyyyy"]  # Your subnet IDs (required)
 
 # Project Configuration
 bucket_name_suffix = "zali-staging"  # This will create bucket: sagemaker-studio-staging-ml-bucket-zali-staging
