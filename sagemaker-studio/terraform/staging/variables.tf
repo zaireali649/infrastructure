@@ -18,19 +18,15 @@ variable "vpc_id" {
 }
 
 variable "subnet_ids" {
-  description = "List of subnet IDs for SageMaker Studio"
+  description = "List of subnet IDs for SageMaker Studio (optional - will auto-discover from VPC if not provided)"
   type        = list(string)
-
-  validation {
-    condition     = length(var.subnet_ids) > 0
-    error_message = "At least one subnet ID must be provided."
-  }
+  default     = []  # Auto-discover subnets if not provided
 
   validation {
     condition = alltrue([
       for subnet_id in var.subnet_ids : can(regex("^subnet-[a-z0-9]{8,17}$", subnet_id))
     ])
-    error_message = "All subnet IDs must be in the format subnet-xxxxxxxxx."
+    error_message = "All subnet IDs must be valid (format: subnet-xxxxxxxxx)."
   }
 }
 
