@@ -1,0 +1,48 @@
+name: Terraform Pull Request
+
+on:
+  pull_request:
+
+jobs:
+  terraform-plan:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - project: ml
+            terraform-environment: staging
+            project-folder: sagemaker-studio
+          - project: ml
+            terraform-environment: staging
+            project-folder: mlflow
+    uses: ./.github/workflows/terraform-plan.yml
+    secrets: inherit
+    with:
+      environment: "${{ matrix.project-folder }}-${{ matrix.terraform-environment }}"
+      terraform-environment: ${{ matrix.terraform-environment }}
+      terraform-working-directory: "${{matrix.project-folder}}/terraform/${{matrix.terraform-environment}}"
+      aws-environment: ${{ matrix.terraform-environment }}
+      project: ${{ matrix.project }}
+      aws-role-name: mlops-github
+
+  terraform-apply:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - project: ml
+            terraform-environment: staging
+            project-folder: sagemaker-studio
+          - project: ml
+            terraform-environment: staging
+            project-folder: mlflow
+    uses: ./.github/workflows/terraform-deploy.yml
+    secrets: inherit
+    needs: terraform-plan
+    with:
+      environment: "${{ matrix.project-folder }}-${{ matrix.terraform-environment }}"
+      terraform-environment: ${{ matrix.terraform-environment }}
+      terraform-working-directory: "${{matrix.project-folder}}/terraform/${{matrix.terraform-environment}}"
+      aws-environment: ${{ matrix.terraform-environment }}
+      project: ${{ matrix.project }}
+      aws-role-name: mlops-github
