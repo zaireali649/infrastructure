@@ -101,15 +101,8 @@ jobs:
       id: plan
       run: |
         # Set additional variables from secrets
-        # Handle potential whitespace or formatting issues in secrets
-        VPC_ID_RAW="${{ secrets.VPC_ID }}"
-        VPC_ID_CLEAN=$(echo "$VPC_ID_RAW" | tr -d '[:space:]' | tr -d '"'"'"' | tr -d '"')
-        export TF_VAR_vpc_id="$VPC_ID_CLEAN"
+        export TF_VAR_vpc_id="${{ secrets.VPC_ID }}"
         export TF_VAR_bucket_name_suffix="${{ secrets.BUCKET_NAME_SUFFIX || 'zali-staging' }}"
-        
-        echo "🔍 Secret processing debug:"
-        echo "  Raw secret length: ${#VPC_ID_RAW}"
-        echo "  Clean secret length: ${#VPC_ID_CLEAN}"
         
         # Set subnet IDs (now required)
         if [ -n "${{ secrets.SUBNET_IDS }}" ]; then
@@ -129,29 +122,6 @@ jobs:
         # Validate VPC ID format (without exposing the actual value)
         if [[ ! "$TF_VAR_vpc_id" =~ ^vpc-[a-z0-9]{8,17}$ ]]; then
           echo "ERROR: VPC_ID format is invalid. Expected format: vpc-xxxxxxxxx"
-          exit 1
-        fi
-        
-        # Debug: Show VPC ID length and first/last characters (for debugging secrets)
-        vpc_length=${#TF_VAR_vpc_id}
-        if [ "$vpc_length" -gt 4 ]; then
-          vpc_start="${TF_VAR_vpc_id:0:4}"
-          vpc_end="${TF_VAR_vpc_id: -4}"
-          echo "🔍 VPC ID Debug: length=$vpc_length, starts='$vpc_start', ends='$vpc_end'"
-        fi
-        
-        # Test VPC existence one more time before proceeding
-        echo "🔍 Final VPC validation before Terraform..."
-        if aws ec2 describe-vpcs --vpc-ids "$TF_VAR_vpc_id" --region "$TF_VAR_aws_region" >/dev/null 2>&1; then
-          echo "✅ VPC verified accessible via AWS CLI"
-        else
-          echo "❌ VPC not accessible via AWS CLI - this will cause Terraform to fail"
-          echo "🔍 Checking if this is a region mismatch..."
-          for region in us-east-1 us-west-1 us-west-2 eu-west-1; do
-            if aws ec2 describe-vpcs --vpc-ids "$TF_VAR_vpc_id" --region "$region" >/dev/null 2>&1; then
-              echo "🔍 VPC found in region: $region (configured region: $TF_VAR_aws_region)"
-            fi
-          done
           exit 1
         fi
         
@@ -253,10 +223,7 @@ jobs:
           (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'plan')
         )
       run: |
-         # Handle potential whitespace or formatting issues in secrets
-         VPC_ID_RAW="${{ secrets.VPC_ID }}"
-         VPC_ID_CLEAN=$(echo "$VPC_ID_RAW" | tr -d '[:space:]' | tr -d '"'"'"' | tr -d '"')
-         export TF_VAR_vpc_id="$VPC_ID_CLEAN"
+         export TF_VAR_vpc_id="${{ secrets.VPC_ID }}"
          export TF_VAR_bucket_name_suffix="${{ secrets.BUCKET_NAME_SUFFIX || 'zali-staging' }}"
          
           # Set subnet IDs (now required)
@@ -284,10 +251,7 @@ jobs:
       id: destroy
       if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'
       run: |
-         # Handle potential whitespace or formatting issues in secrets
-         VPC_ID_RAW="${{ secrets.VPC_ID }}"
-         VPC_ID_CLEAN=$(echo "$VPC_ID_RAW" | tr -d '[:space:]' | tr -d '"'"'"' | tr -d '"')
-         export TF_VAR_vpc_id="$VPC_ID_CLEAN"
+         export TF_VAR_vpc_id="${{ secrets.VPC_ID }}"
          export TF_VAR_bucket_name_suffix="${{ secrets.BUCKET_NAME_SUFFIX || 'zali-staging' }}"
          
           # Set subnet IDs (now required)
