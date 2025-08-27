@@ -36,7 +36,7 @@ env:
 
 jobs:
   terraform:
-    name: 'Terraform ${{ github.event.inputs.action || (github.event_name == 'pull_request' && 'plan' || 'apply') }}'
+    name: Terraform Deploy
     runs-on: ubuntu-latest
     
     # Use environment protection for production-like deployments
