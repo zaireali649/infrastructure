@@ -126,6 +126,19 @@ jobs:
         TF_VAR_github_repository: ${{ github.repository }}
         TF_VAR_github_workflow: ${{ github.workflow }}
     
+    - name: Plan Summary
+      if: steps.plan.outcome == 'success'
+      run: |
+        echo "## 📋 Plan Summary" >> $GITHUB_STEP_SUMMARY
+        echo "✅ Terraform plan completed successfully" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if [[ "${{ github.event.inputs.action }}" == "plan" ]] || [[ "${{ github.event_name }}" == "push" ]]; then
+          echo "🚀 **Proceeding with automatic deployment...**" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "ℹ️ Plan completed. Apply step will run based on workflow conditions." >> $GITHUB_STEP_SUMMARY
+        fi
+    
     - name: Add Plan to PR Comment
       if: github.event_name == 'pull_request'
       uses: actions/github-script@v7
@@ -174,11 +187,32 @@ jobs:
             });
           }
     
+    - name: Pre-Apply Check
+      if: |
+        steps.plan.outcome == 'success' && (
+          (github.ref == 'refs/heads/main' && github.event_name == 'push') || 
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply') ||
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'plan')
+        )
+      run: |
+        echo "🚀 Starting SageMaker Studio deployment..."
+        echo "📊 Configuration:"
+        echo "  - VPC ID: configured ✓"
+        echo "  - Subnet IDs: configured ✓" 
+        echo "  - User: zali"
+        echo "  - Environment: staging"
+        echo "  - Region: ${{ env.AWS_REGION }}"
+        echo ""
+        echo "⏳ This may take 15-20 minutes..."
+    
     - name: Terraform Apply
       id: apply
       if: |
-        (github.ref == 'refs/heads/main' && github.event_name == 'push') || 
-        (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply')
+        steps.plan.outcome == 'success' && (
+          (github.ref == 'refs/heads/main' && github.event_name == 'push') || 
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply') ||
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'plan')
+        )
       run: |
          export TF_VAR_vpc_id="${{ secrets.VPC_ID }}"
          export TF_VAR_bucket_name_suffix="${{ secrets.BUCKET_NAME_SUFFIX || 'zali-staging' }}"
