@@ -64,7 +64,7 @@ This directory contains the Terraform configuration for deploying Amazon SageMak
 | Variable | Description | Default | Staging Value |
 |----------|-------------|---------|---------------|
 | `bucket_name_suffix` | Unique suffix for S3 bucket | - | `"zali-staging"` |
-| `mlflow_version` | MLflow version | `"2.8.1"` | `"2.8.1"` |
+| `mlflow_version` | MLflow version | `"3.0"` | `"3.0"` |
 | `automatic_model_registration` | Auto-register models | `true` | `true` |
 | `create_s3_bucket` | Create new S3 bucket | `true` | `true` |
 

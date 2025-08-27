@@ -46,7 +46,7 @@ module "mlflow" {
   bucket_name_suffix = "alice"
 
   # MLflow configuration
-  mlflow_version = "2.8.1"
+  mlflow_version = "3.0"
   automatic_model_registration = true
 
   tags = {
@@ -67,7 +67,7 @@ module "mlflow" {
   bucket_name_suffix = "production"
 
   # MLflow configuration
-  mlflow_version = "2.8.1"
+  mlflow_version = "3.0"
   automatic_model_registration = true
   weekly_maintenance_window_start = "SUN:03:00"
 
@@ -152,7 +152,7 @@ module "mlflow" {
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | tracking_server_name | Name for the MLflow tracking server | `string` | `null` | no |
-| mlflow_version | MLflow version for the tracking server | `string` | `"2.8.1"` | no |
+| mlflow_version | MLflow version for the tracking server | `string` | `"3.0"` | no |
 | automatic_model_registration | Whether to enable automatic model registration | `bool` | `true` | no |
 | weekly_maintenance_window_start | Weekly maintenance window start time | `string` | `"TUE:03:30"` | no |
 
@@ -338,7 +338,7 @@ module "mlflow_staging" {
   environment  = "staging"
   bucket_name_suffix = "staging"
   
-  mlflow_version = "2.8.1"
+  mlflow_version = "3.0"
 }
 
 # Production
@@ -349,7 +349,7 @@ module "mlflow_prod" {
   environment  = "prod"
   bucket_name_suffix = "prod"
   
-  mlflow_version = "2.8.1"
+  mlflow_version = "3.0"
   weekly_maintenance_window_start = "SUN:03:00"
   
   # Enhanced security for production
