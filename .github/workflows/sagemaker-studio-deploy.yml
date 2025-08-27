@@ -215,14 +215,6 @@ jobs:
         # VPC ID is now hardcoded in the module
         export TF_VAR_bucket_name_suffix="${{ secrets.BUCKET_NAME_SUFFIX || 'zali-staging' }}"
         
-        # Set subnet IDs (optional - will auto-discover from VPC if not provided)
-        if [ -n "${{ secrets.SUBNET_IDS }}" ]; then
-          export TF_VAR_subnet_ids='[${{ secrets.SUBNET_IDS }}]'
-          echo "ℹ️  Using provided subnet IDs from secret"
-        else
-          echo "ℹ️  Subnet IDs not provided - will auto-discover from VPC vpc-0a9ee577"
-        fi
-        
         echo "ℹ️  Using hardcoded VPC ID: vpc-0a9ee577"
         
         terraform apply -auto-approve tfplan
