@@ -32,33 +32,13 @@ provider "aws" {
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
-# Data sources for VPC and subnets
-data "aws_vpc" "main" {
-  id = var.vpc_id
-  
-  lifecycle {
-    postcondition {
-      condition     = self.id != ""
-      error_message = "VPC ID '${var.vpc_id}' not found. Please verify the VPC ID is correct and exists in the current AWS region."
-    }
-  }
-}
-
-# Data source for subnet auto-discovery (only used if subnet_ids not provided)
-data "aws_subnets" "all" {
-  filter {
-    name   = "vpc-id"
-    values = [var.vpc_id]
-  }
-}
-
 # Local values for consistent naming and tagging
 locals {
   project_name = "sagemaker-studio"
   environment  = "staging"
   
-  # Use provided subnet_ids if available, otherwise use all subnets in VPC
-  selected_subnet_ids = length(var.subnet_ids) > 0 ? var.subnet_ids : data.aws_subnets.all.ids
+  # Use provided subnet_ids directly - no auto-discovery to avoid data source issues
+  selected_subnet_ids = var.subnet_ids
   
   common_tags = merge(var.additional_tags, {
     Project     = local.project_name
