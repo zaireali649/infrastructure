@@ -42,20 +42,20 @@ data "aws_region" "current" {}
 
 # SageMaker Studio module configuration
 module "sagemaker_studio" {
-  source = "../"  # Path to the module
+  source = "../" # Path to the module
 
   # Required parameters
-  project_name        = local.project_name
-  environment         = local.environment
-  bucket_name_suffix  = "staging-team-alpha"  # Make this unique for your org
-  vpc_id              = data.aws_vpc.main.id
-  subnet_ids          = data.aws_subnets.private.ids
+  project_name       = local.project_name
+  environment        = local.environment
+  bucket_name_suffix = "staging-team-alpha" # Make this unique for your org
+  vpc_id             = data.aws_vpc.main.id
+  subnet_ids         = data.aws_subnets.private.ids
 
   # Staging-specific configurations
-  user_profile_name           = "staging-ml-user"
-  auth_mode                   = "IAM"
-  app_network_access_type     = "PublicInternetOnly"  # Use "VpcOnly" for production
-  default_instance_type       = "ml.t3.medium"       # Cost-effective for staging
+  user_profile_name       = "staging-ml-user"
+  auth_mode               = "IAM"
+  app_network_access_type = "PublicInternetOnly" # Use "VpcOnly" for production
+  default_instance_type   = "ml.t3.medium"       # Cost-effective for staging
 
   # S3 configuration
   enable_s3_bucket = true

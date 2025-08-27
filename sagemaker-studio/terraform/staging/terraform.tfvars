@@ -2,28 +2,28 @@
 # This file contains the configuration for deploying SageMaker Studio for user 'zali'
 
 # AWS Configuration
-aws_region = "us-east-1"  # Update this to your preferred region
+aws_region = "us-east-1" # Update this to your preferred region
 
 # Network Configuration
 # Update these values to match your actual VPC and subnet IDs
-vpc_id = "vpc-xxxxxxxxx"  # Your VPC ID
-subnet_ids = ["subnet-xxxxxxxxx", "subnet-yyyyyyyyy"]  # Your subnet IDs (required)
+vpc_id     = "vpc-xxxxxxxxx"                          # Your VPC ID
+subnet_ids = ["subnet-xxxxxxxxx", "subnet-yyyyyyyyy"] # Your subnet IDs (required)
 
 # Project Configuration
-bucket_name_suffix = "zali-staging"  # This will create bucket: sagemaker-studio-staging-ml-bucket-zali-staging
+bucket_name_suffix = "zali-staging" # This will create bucket: sagemaker-studio-staging-ml-bucket-zali-staging
 
 # User Configuration
 user_profile_name = "zali"
 
 # SageMaker Studio Settings
 auth_mode               = "IAM"
-app_network_access_type = "PublicInternetOnly"  # Change to "VpcOnly" for production
+app_network_access_type = "PublicInternetOnly" # Change to "VpcOnly" for production
 
 # Instance Types (optimized for staging/cost)
-default_instance_type           = "ml.t3.medium"
-jupyter_instance_type          = "ml.t3.medium"
-kernel_gateway_instance_type   = "ml.t3.medium"
-tensorboard_instance_type      = "ml.t3.medium"
+default_instance_type        = "ml.t3.medium"
+jupyter_instance_type        = "ml.t3.medium"
+kernel_gateway_instance_type = "ml.t3.medium"
+tensorboard_instance_type    = "ml.t3.medium"
 
 # S3 Configuration
 enable_s3_bucket = true

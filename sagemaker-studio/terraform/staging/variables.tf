@@ -9,7 +9,7 @@ variable "aws_region" {
 variable "vpc_id" {
   description = "VPC ID to deploy SageMaker Studio into"
   type        = string
-  
+
   validation {
     condition     = can(regex("^vpc-[a-z0-9]{8,17}$", var.vpc_id))
     error_message = "VPC ID must be in the format vpc-xxxxxxxxx."
@@ -19,12 +19,12 @@ variable "vpc_id" {
 variable "subnet_ids" {
   description = "List of subnet IDs for SageMaker Studio"
   type        = list(string)
-  
+
   validation {
     condition     = length(var.subnet_ids) > 0
     error_message = "At least one subnet ID must be provided."
   }
-  
+
   validation {
     condition = alltrue([
       for subnet_id in var.subnet_ids : can(regex("^subnet-[a-z0-9]{8,17}$", subnet_id))
@@ -127,8 +127,8 @@ variable "sharing_settings" {
   description = "Sharing settings for SageMaker Studio notebooks"
   type = object({
     notebook_output_option = optional(string, "Allowed")
-    s3_output_path        = optional(string)
-    s3_kms_key_id         = optional(string)
+    s3_output_path         = optional(string)
+    s3_kms_key_id          = optional(string)
   })
   default = {
     notebook_output_option = "Allowed"

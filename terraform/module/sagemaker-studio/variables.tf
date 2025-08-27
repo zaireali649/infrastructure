@@ -100,8 +100,8 @@ variable "sharing_settings" {
   description = "Sharing settings for SageMaker Studio notebooks"
   type = object({
     notebook_output_option = optional(string, "Allowed")
-    s3_output_path        = optional(string)
-    s3_kms_key_id         = optional(string)
+    s3_output_path         = optional(string)
+    s3_kms_key_id          = optional(string)
   })
   default = {
     notebook_output_option = "Allowed"
@@ -113,8 +113,8 @@ variable "jupyter_server_app_settings" {
   type = object({
     default_resource_spec = optional(object({
       instance_type               = optional(string)
-      lifecycle_config_arn       = optional(string)
-      sagemaker_image_arn        = optional(string)
+      lifecycle_config_arn        = optional(string)
+      sagemaker_image_arn         = optional(string)
       sagemaker_image_version_arn = optional(string)
     }))
     lifecycle_config_arns = optional(list(string), [])
@@ -127,8 +127,8 @@ variable "kernel_gateway_app_settings" {
   type = object({
     default_resource_spec = optional(object({
       instance_type               = optional(string)
-      lifecycle_config_arn       = optional(string)
-      sagemaker_image_arn        = optional(string)
+      lifecycle_config_arn        = optional(string)
+      sagemaker_image_arn         = optional(string)
       sagemaker_image_version_arn = optional(string)
     }))
     lifecycle_config_arns = optional(list(string), [])
@@ -141,8 +141,8 @@ variable "tensor_board_app_settings" {
   type = object({
     default_resource_spec = optional(object({
       instance_type               = optional(string)
-      lifecycle_config_arn       = optional(string)
-      sagemaker_image_arn        = optional(string)
+      lifecycle_config_arn        = optional(string)
+      sagemaker_image_arn         = optional(string)
       sagemaker_image_version_arn = optional(string)
     }))
   })

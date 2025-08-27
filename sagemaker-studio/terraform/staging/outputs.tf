@@ -112,11 +112,11 @@ output "StudioUserName" {
 output "sagemaker_studio_connection_info" {
   description = "Connection information for SageMaker Studio"
   value = {
-    domain_id         = module.sagemaker_studio.domain_id
-    domain_url        = module.sagemaker_studio.domain_url
-    user_profile_name = module.sagemaker_studio.user_profile_name
+    domain_id          = module.sagemaker_studio.domain_id
+    domain_url         = module.sagemaker_studio.domain_url
+    user_profile_name  = module.sagemaker_studio.user_profile_name
     execution_role_arn = module.sagemaker_studio.execution_role_arn
-    s3_bucket_name    = module.sagemaker_studio.s3_bucket_name
-    region           = data.aws_region.current.name
+    s3_bucket_name     = module.sagemaker_studio.s3_bucket_name
+    region             = data.aws_region.current.name
   }
 }

@@ -3,7 +3,7 @@
 
 terraform {
   required_version = ">= 1.5"
-  
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -36,10 +36,10 @@ data "aws_region" "current" {}
 locals {
   project_name = "sagemaker-studio"
   environment  = "staging"
-  
+
   # Use provided subnet_ids directly - no auto-discovery to avoid data source issues
   selected_subnet_ids = var.subnet_ids
-  
+
   common_tags = merge(var.additional_tags, {
     Project     = local.project_name
     Environment = local.environment
@@ -54,11 +54,11 @@ module "sagemaker_studio" {
   source = "../../../terraform/module/sagemaker-studio"
 
   # Required parameters
-  project_name        = local.project_name
-  environment         = local.environment
-  bucket_name_suffix  = var.bucket_name_suffix
-  vpc_id              = var.vpc_id
-  subnet_ids          = local.selected_subnet_ids
+  project_name       = local.project_name
+  environment        = local.environment
+  bucket_name_suffix = var.bucket_name_suffix
+  vpc_id             = var.vpc_id
+  subnet_ids         = local.selected_subnet_ids
 
   # User configuration
   user_profile_name = var.user_profile_name
