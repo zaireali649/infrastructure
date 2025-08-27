@@ -3,6 +3,11 @@ name: Terraform Pull Request
 on:
   pull_request:
 
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write
+
 jobs:
   terraform-plan:
     strategy:
