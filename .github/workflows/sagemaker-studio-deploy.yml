@@ -81,12 +81,16 @@ jobs:
       run: |
         # Initialize with backend configuration from secrets if provided
         if [ -n "${{ secrets.TF_BACKEND_BUCKET }}" ]; then
+          echo "🗄️ Using S3 backend: ${{ secrets.TF_BACKEND_BUCKET }}"
           terraform init \
             -backend-config="bucket=${{ secrets.TF_BACKEND_BUCKET }}" \
             -backend-config="key=sagemaker-studio/staging/terraform.tfstate" \
             -backend-config="region=${{ env.AWS_REGION }}"
         else
-          terraform init
+          echo "⚠️ Using local backend (not recommended for production)"
+          echo "💡 Set TF_BACKEND_BUCKET secret for remote state management"
+          # Use local backend by migrating from S3 backend config
+          terraform init -migrate-state -input=false || terraform init
         fi
     
     - name: Terraform Validate
