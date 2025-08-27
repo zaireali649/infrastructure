@@ -7,7 +7,6 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.31.0"  # Pin to stable version to avoid provider issues
     }
   }
 

@@ -1,0 +1,58 @@
+name: Terraform Pull Request
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write
+
+jobs:
+  plan-sagemaker-studio:
+    uses: ./.github/workflows/terraform-plan.yml
+    secrets: inherit
+    with:
+      environment: "sagemaker-studio-staging"
+      terraform-environment: staging
+      terraform-working-directory: "sagemaker-studio/terraform/staging"
+      aws-environment: staging
+      project: ml
+      aws-role-name: mlops-github
+
+  plan-mlflow:
+    uses: ./.github/workflows/terraform-plan.yml
+    secrets: inherit
+    with:
+      environment: "mlflow-staging"
+      terraform-environment: staging
+      terraform-working-directory: "mlflow/terraform/staging"
+      aws-environment: staging
+      project: ml
+      aws-role-name: mlops-github
+
+  apply-sagemaker-studio:
+    uses: ./.github/workflows/terraform-deploy.yml
+    secrets: inherit
+    needs: plan-sagemaker-studio
+    if: needs.plan-sagemaker-studio.result == 'success'
+    with:
+      environment: "sagemaker-studio-staging"
+      terraform-environment: staging
+      terraform-working-directory: "sagemaker-studio/terraform/staging"
+      aws-environment: staging
+      project: ml
+      aws-role-name: mlops-github
+
+  apply-mlflow:
+    uses: ./.github/workflows/terraform-deploy.yml
+    secrets: inherit
+    needs: plan-mlflow
+    if: needs.plan-mlflow.result == 'success'
+    with:
+      environment: "mlflow-staging"
+      terraform-environment: staging
+      terraform-working-directory: "mlflow/terraform/staging"
+      aws-environment: staging
+      project: ml
+      aws-role-name: mlops-github

@@ -1,0 +1,194 @@
+name: Terraform Deploy (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: 'Environment for GitHub environment protection'
+        required: true
+        type: string
+      terraform-environment:
+        description: 'Terraform environment (staging, prod)'
+        required: true
+        type: string
+      terraform-working-directory:
+        description: 'Working directory for Terraform'
+        required: true
+        type: string
+      aws-environment:
+        description: 'AWS environment'
+        required: true
+        type: string
+      project:
+        description: 'Project name'
+        required: true
+        type: string
+      aws-role-name:
+        description: 'AWS IAM role name for OIDC'
+        required: true
+        type: string
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        required: true
+      TF_BACKEND_BUCKET:
+        required: false
+      BUCKET_NAME_SUFFIX:
+        required: false
+      SUBNET_IDS:
+        required: false
+
+env:
+  AWS_REGION: us-east-1
+  TERRAFORM_VERSION: 1.6.0
+  TF_VAR_aws_region: us-east-1
+
+jobs:
+  deploy:
+    name: Deploy ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    
+    # Use environment protection for deployments
+    environment: 
+      name: ${{ inputs.environment }}
+    
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.terraform-working-directory }}
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+    
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ${{ env.TERRAFORM_VERSION }}
+        terraform_wrapper: false
+    
+    - name: Terraform Init
+      id: init
+      run: |
+        # Initialize with backend configuration from secrets if provided
+        if [ -n "${{ secrets.TF_BACKEND_BUCKET }}" ]; then
+          echo "🗄️ Using S3 backend: ${{ secrets.TF_BACKEND_BUCKET }}"
+          # Convert sagemaker-studio/terraform/staging to sagemaker-studio/staging
+          state_key=$(echo "${{ inputs.terraform-working-directory }}" | sed 's|/terraform||')
+          echo "📂 State key: ${state_key}/terraform.tfstate"
+          echo "🌍 Region: ${{ env.AWS_REGION }}"
+          
+          terraform init \
+            -backend-config="bucket=${{ secrets.TF_BACKEND_BUCKET }}" \
+            -backend-config="key=${state_key}/terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}"
+        else
+          echo "⚠️ Using local backend (not recommended for production)"
+          terraform init -migrate-state -input=false || terraform init
+        fi
+    
+    - name: Download Plan Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: tfplan-${{ inputs.environment }}
+        path: ${{ inputs.terraform-working-directory }}
+      continue-on-error: true
+    
+    - name: Set Variables
+      id: vars
+      run: |
+        # Set common variables
+        export TF_VAR_bucket_name_suffix="${{ secrets.BUCKET_NAME_SUFFIX || 'zali-staging' }}"
+        export TF_VAR_github_repository="${{ github.repository }}"
+        export TF_VAR_github_workflow="${{ github.workflow }}"
+        
+        # Set hardcoded variables for staging
+        export TF_VAR_vpc_id="vpc-0a9ee577"
+        
+        # Set subnet IDs (optional - will auto-discover from VPC if not provided)
+        if [ -n "${{ secrets.SUBNET_IDS }}" ]; then
+          export TF_VAR_subnet_ids='[${{ secrets.SUBNET_IDS }}]'
+          echo "ℹ️ Using provided subnet IDs from secret"
+        else
+          echo "ℹ️ Subnet IDs not provided - will auto-discover from VPC"
+        fi
+        
+        # Save variables to environment file for next step
+        echo "TF_VAR_bucket_name_suffix=${TF_VAR_bucket_name_suffix}" >> $GITHUB_ENV
+        echo "TF_VAR_github_repository=${TF_VAR_github_repository}" >> $GITHUB_ENV
+        echo "TF_VAR_github_workflow=${TF_VAR_github_workflow}" >> $GITHUB_ENV
+        echo "TF_VAR_vpc_id=${TF_VAR_vpc_id}" >> $GITHUB_ENV
+        
+        if [ -n "${TF_VAR_subnet_ids:-}" ]; then
+          echo "TF_VAR_subnet_ids=${TF_VAR_subnet_ids}" >> $GITHUB_ENV
+        fi
+    
+    - name: Pre-deployment Check
+      run: |
+        echo "🚀 Starting ${{ inputs.environment }} deployment..."
+        echo "📊 Configuration:"
+        echo "  - Environment: ${{ inputs.environment }}"
+        echo "  - Project: ${{ inputs.project }}"
+        echo "  - Region: ${{ env.AWS_REGION }}"
+        echo "  - VPC ID: configured ✓"
+        echo "  - Subnet IDs: configured ✓"
+        echo ""
+        echo "⏳ Deployment may take 5-20 minutes depending on service..."
+    
+    - name: Terraform Apply
+      id: apply
+      run: |
+        echo "🚀 Applying ${{ inputs.environment }} configuration..."
+        
+        # Check if plan file exists, otherwise create a new plan
+        if [ -f "tfplan" ]; then
+          echo "📋 Using existing plan file"
+          terraform apply -auto-approve tfplan
+        else
+          echo "📋 Creating new plan and applying"
+          terraform apply -auto-approve
+        fi
+    
+    - name: Get Terraform Outputs
+      id: outputs
+      if: steps.apply.outcome == 'success'
+      run: |
+        echo "🔍 Getting Terraform outputs..."
+        
+        # Get all outputs as JSON
+        terraform output -json > outputs.json
+        
+        # Display outputs for logging
+        echo "Terraform outputs:"
+        cat outputs.json
+    
+    - name: Deployment Summary
+      if: steps.apply.outcome == 'success'
+      run: |
+        echo "## 🚀 ${{ inputs.environment }} Deployment Complete!" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📊 Deployment Details" >> $GITHUB_STEP_SUMMARY
+        echo "- **Environment**: \`${{ inputs.environment }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **Project**: \`${{ inputs.project }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **Region**: \`${{ env.AWS_REGION }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🔗 Quick Links" >> $GITHUB_STEP_SUMMARY
+        echo "- [AWS Console](https://console.aws.amazon.com/)" >> $GITHUB_STEP_SUMMARY
+        echo "- [Terraform Outputs](outputs.json)" >> $GITHUB_STEP_SUMMARY
+    
+    - name: Upload Outputs Artifact
+      if: steps.apply.outcome == 'success'
+      uses: actions/upload-artifact@v4
+      with:
+        name: terraform-outputs-${{ inputs.environment }}
+        path: ${{ inputs.terraform-working-directory }}/outputs.json
+        retention-days: 7
+      continue-on-error: true
