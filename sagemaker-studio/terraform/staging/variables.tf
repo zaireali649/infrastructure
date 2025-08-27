@@ -12,6 +12,12 @@ variable "vpc_id" {
   default     = null
 }
 
+variable "subnet_ids" {
+  description = "List of subnet IDs for SageMaker Studio (if not provided, will auto-discover private subnets)"
+  type        = list(string)
+  default     = []
+}
+
 variable "bucket_name_suffix" {
   description = "Unique suffix for S3 bucket naming"
   type        = string

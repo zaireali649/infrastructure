@@ -70,6 +70,7 @@ terraform destroy
 # AWS Settings
 aws_region = "us-east-1"
 vpc_id     = "vpc-xxxxxxxxx"
+subnet_ids = ["subnet-xxxxxxxxx", "subnet-yyyyyyyyy"]
 
 # User Configuration
 user_profile_name  = "zali"
@@ -120,6 +121,7 @@ Configure these repository secrets for GitHub Actions deployment:
 | Secret Name | Description | Default Value |
 |-------------|-------------|---------------|
 | `VPC_ID` | VPC ID to deploy into | `vpc-xxxxxxxxx` |
+| `SUBNET_IDS` | Comma-separated list of subnet IDs | `"subnet-xxx","subnet-yyy"` |
 | `BUCKET_NAME_SUFFIX` | Unique suffix for S3 bucket | `zali-staging` |
 | `TF_BACKEND_BUCKET` | S3 bucket for Terraform state | Uses local state |
 
@@ -233,7 +235,7 @@ Error: no matching VPC found
 ```
 Error: no matching subnet found
 ```
-**Solution**: Ensure private subnets are tagged with `Type: private`.
+**Solution**: Either specify `subnet_ids` directly in terraform.tfvars or ensure your VPC has subnets available.
 
 #### 3. IAM Permissions
 ```

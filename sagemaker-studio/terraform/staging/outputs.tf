@@ -72,7 +72,7 @@ output "vpc_id" {
 
 output "subnet_ids" {
   description = "Subnet IDs where SageMaker Studio is deployed"
-  value       = data.aws_subnets.private.ids
+  value       = local.selected_subnet_ids
 }
 
 # CloudFormation compatibility outputs for migration

@@ -37,14 +37,11 @@ data "aws_vpc" "main" {
   id = var.vpc_id
 }
 
-data "aws_subnets" "private" {
+# Data source for subnet auto-discovery (only used if subnet_ids not provided)
+data "aws_subnets" "all" {
   filter {
     name   = "vpc-id"
     values = [var.vpc_id]
-  }
-
-  tags = {
-    Type = "private"
   }
 }
 
@@ -52,6 +49,9 @@ data "aws_subnets" "private" {
 locals {
   project_name = "sagemaker-studio"
   environment  = "staging"
+  
+  # Use provided subnet_ids if available, otherwise use all subnets in VPC
+  selected_subnet_ids = length(var.subnet_ids) > 0 ? var.subnet_ids : data.aws_subnets.all.ids
   
   common_tags = merge(var.additional_tags, {
     Project     = local.project_name
@@ -71,7 +71,7 @@ module "sagemaker_studio" {
   environment         = local.environment
   bucket_name_suffix  = var.bucket_name_suffix
   vpc_id              = var.vpc_id
-  subnet_ids          = data.aws_subnets.private.ids
+  subnet_ids          = local.selected_subnet_ids
 
   # User configuration
   user_profile_name = var.user_profile_name

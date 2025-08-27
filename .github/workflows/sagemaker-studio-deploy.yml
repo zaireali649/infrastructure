@@ -100,6 +100,11 @@ jobs:
         export TF_VAR_vpc_id="${{ secrets.VPC_ID }}"
         export TF_VAR_bucket_name_suffix="${{ secrets.BUCKET_NAME_SUFFIX || 'zali-staging' }}"
         
+        # Set subnet IDs if provided (comma-separated list)
+        if [ -n "${{ secrets.SUBNET_IDS }}" ]; then
+          export TF_VAR_subnet_ids='[${{ secrets.SUBNET_IDS }}]'
+        fi
+        
         terraform plan -no-color -input=false -out=tfplan
       env:
         TF_VAR_github_repository: ${{ github.repository }}
@@ -159,10 +164,15 @@ jobs:
         (github.ref == 'refs/heads/main' && github.event_name == 'push') || 
         (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply')
       run: |
-        export TF_VAR_vpc_id="${{ secrets.VPC_ID }}"
-        export TF_VAR_bucket_name_suffix="${{ secrets.BUCKET_NAME_SUFFIX || 'zali-staging' }}"
-        
-        terraform apply -auto-approve tfplan
+         export TF_VAR_vpc_id="${{ secrets.VPC_ID }}"
+         export TF_VAR_bucket_name_suffix="${{ secrets.BUCKET_NAME_SUFFIX || 'zali-staging' }}"
+         
+         # Set subnet IDs if provided (comma-separated list)
+         if [ -n "${{ secrets.SUBNET_IDS }}" ]; then
+           export TF_VAR_subnet_ids='[${{ secrets.SUBNET_IDS }}]'
+         fi
+         
+         terraform apply -auto-approve tfplan
       env:
         TF_VAR_github_repository: ${{ github.repository }}
         TF_VAR_github_workflow: ${{ github.workflow }}
@@ -171,10 +181,15 @@ jobs:
       id: destroy
       if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'
       run: |
-        export TF_VAR_vpc_id="${{ secrets.VPC_ID }}"
-        export TF_VAR_bucket_name_suffix="${{ secrets.BUCKET_NAME_SUFFIX || 'zali-staging' }}"
-        
-        terraform destroy -auto-approve
+         export TF_VAR_vpc_id="${{ secrets.VPC_ID }}"
+         export TF_VAR_bucket_name_suffix="${{ secrets.BUCKET_NAME_SUFFIX || 'zali-staging' }}"
+         
+         # Set subnet IDs if provided (comma-separated list)
+         if [ -n "${{ secrets.SUBNET_IDS }}" ]; then
+           export TF_VAR_subnet_ids='[${{ secrets.SUBNET_IDS }}]'
+         fi
+         
+         terraform destroy -auto-approve
       env:
         TF_VAR_github_repository: ${{ github.repository }}
         TF_VAR_github_workflow: ${{ github.workflow }}
