@@ -60,6 +60,18 @@ output "aws_region" {
   value       = data.aws_region.current.name
 }
 
+# Debug outputs
+output "debug_info" {
+  description = "Debug information for troubleshooting"
+  value = {
+    vpc_id_provided     = var.vpc_id
+    subnet_ids_provided = var.subnet_ids
+    subnet_ids_count    = length(var.subnet_ids)
+    discovered_subnets  = data.aws_subnets.all.ids
+    selected_subnets    = local.selected_subnet_ids
+  }
+}
+
 output "aws_account_id" {
   description = "AWS account ID where resources are deployed"
   value       = data.aws_caller_identity.current.account_id
