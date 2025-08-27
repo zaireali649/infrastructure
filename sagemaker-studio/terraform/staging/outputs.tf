@@ -67,7 +67,7 @@ output "debug_info" {
     vpc_id_provided     = var.vpc_id
     subnet_ids_provided = var.subnet_ids
     subnet_ids_count    = length(var.subnet_ids)
-    discovered_subnets  = data.aws_subnets.all.ids
+    discovered_subnets  = "auto-discovery disabled"
     selected_subnets    = local.selected_subnet_ids
   }
 }
