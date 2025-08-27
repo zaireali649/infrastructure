@@ -213,26 +213,21 @@ jobs:
           (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'plan')
         )
       run: |
-                   # VPC ID is now hardcoded in the module
-         export TF_VAR_bucket_name_suffix="${{ secrets.BUCKET_NAME_SUFFIX || 'zali-staging' }}"
-         
-          # Set subnet IDs (now required)
-          if [ -n "${{ secrets.SUBNET_IDS }}" ]; then
-            export TF_VAR_subnet_ids='[${{ secrets.SUBNET_IDS }}]'
-          else
-            echo "ERROR: SUBNET_IDS secret is required but not set"
-            exit 1
-          fi
-         
-         # Validate that required variables are set  
-         if [ -z "$TF_VAR_vpc_id" ]; then
-           echo "ERROR: VPC_ID secret is not set or empty"
-           exit 1
-         fi
-         
-         echo "VPC ID secret is configured"
-         
-         terraform apply -auto-approve tfplan
+        # VPC ID is now hardcoded in the module
+        export TF_VAR_bucket_name_suffix="${{ secrets.BUCKET_NAME_SUFFIX || 'zali-staging' }}"
+        
+        # Set subnet IDs (now required)
+        if [ -n "${{ secrets.SUBNET_IDS }}" ]; then
+          export TF_VAR_subnet_ids='[${{ secrets.SUBNET_IDS }}]'
+        else
+          echo "ERROR: SUBNET_IDS secret is required but not set"
+          echo "Please set SUBNET_IDS secret with comma-separated subnet IDs: \"subnet-xxx\",\"subnet-yyy\""
+          exit 1
+        fi
+        
+        echo "ℹ️  Using hardcoded VPC ID: vpc-0a9ee577"
+        
+        terraform apply -auto-approve tfplan
       env:
         TF_VAR_github_repository: ${{ github.repository }}
         TF_VAR_github_workflow: ${{ github.workflow }}
@@ -241,26 +236,21 @@ jobs:
       id: destroy
       if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'
       run: |
-                   # VPC ID is now hardcoded in the module
-         export TF_VAR_bucket_name_suffix="${{ secrets.BUCKET_NAME_SUFFIX || 'zali-staging' }}"
-         
-          # Set subnet IDs (now required)
-          if [ -n "${{ secrets.SUBNET_IDS }}" ]; then
-            export TF_VAR_subnet_ids='[${{ secrets.SUBNET_IDS }}]'
-          else
-            echo "ERROR: SUBNET_IDS secret is required but not set"
-            exit 1
-          fi
-         
-         # Validate that required variables are set  
-         if [ -z "$TF_VAR_vpc_id" ]; then
-           echo "ERROR: VPC_ID secret is not set or empty"
-           exit 1
-         fi
-         
-         echo "VPC ID secret is configured"
-         
-         terraform destroy -auto-approve
+        # VPC ID is now hardcoded in the module
+        export TF_VAR_bucket_name_suffix="${{ secrets.BUCKET_NAME_SUFFIX || 'zali-staging' }}"
+        
+        # Set subnet IDs (now required)
+        if [ -n "${{ secrets.SUBNET_IDS }}" ]; then
+          export TF_VAR_subnet_ids='[${{ secrets.SUBNET_IDS }}]'
+        else
+          echo "ERROR: SUBNET_IDS secret is required but not set"
+          echo "Please set SUBNET_IDS secret with comma-separated subnet IDs: \"subnet-xxx\",\"subnet-yyy\""
+          exit 1
+        fi
+        
+        echo "ℹ️  Using hardcoded VPC ID: vpc-0a9ee577"
+        
+        terraform destroy -auto-approve
       env:
         TF_VAR_github_repository: ${{ github.repository }}
         TF_VAR_github_workflow: ${{ github.workflow }}
