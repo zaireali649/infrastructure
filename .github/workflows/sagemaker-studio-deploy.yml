@@ -105,6 +105,21 @@ jobs:
           export TF_VAR_subnet_ids='[${{ secrets.SUBNET_IDS }}]'
         fi
         
+        # Validate that required variables are set
+        if [ -z "$TF_VAR_vpc_id" ]; then
+          echo "ERROR: VPC_ID secret is not set or empty"
+          exit 1
+        fi
+        
+        # Validate VPC ID format (without exposing the actual value)
+        if [[ ! "$TF_VAR_vpc_id" =~ ^vpc-[a-z0-9]{8,17}$ ]]; then
+          echo "ERROR: VPC_ID format is invalid. Expected format: vpc-xxxxxxxxx"
+          exit 1
+        fi
+        
+        echo "✓ VPC ID secret is configured and format is valid"
+        echo "✓ Region: $TF_VAR_aws_region"
+        
         terraform plan -no-color -input=false -out=tfplan
       env:
         TF_VAR_github_repository: ${{ github.repository }}
@@ -172,6 +187,14 @@ jobs:
            export TF_VAR_subnet_ids='[${{ secrets.SUBNET_IDS }}]'
          fi
          
+         # Validate that required variables are set  
+         if [ -z "$TF_VAR_vpc_id" ]; then
+           echo "ERROR: VPC_ID secret is not set or empty"
+           exit 1
+         fi
+         
+         echo "VPC ID secret is configured"
+         
          terraform apply -auto-approve tfplan
       env:
         TF_VAR_github_repository: ${{ github.repository }}
@@ -188,6 +211,14 @@ jobs:
          if [ -n "${{ secrets.SUBNET_IDS }}" ]; then
            export TF_VAR_subnet_ids='[${{ secrets.SUBNET_IDS }}]'
          fi
+         
+         # Validate that required variables are set  
+         if [ -z "$TF_VAR_vpc_id" ]; then
+           echo "ERROR: VPC_ID secret is not set or empty"
+           exit 1
+         fi
+         
+         echo "VPC ID secret is configured"
          
          terraform destroy -auto-approve
       env:
