@@ -38,7 +38,7 @@ variable "weekly_maintenance_window_start" {
   type        = string
   default     = "TUE:03:30"
   validation {
-    condition = can(regex("^(MON|TUE|WED|THU|FRI|SAT|SUN):[0-2][0-9]:[0-5][0-9]$", var.weekly_maintenance_window_start))
+    condition = can(regex("(?i)^(MON|TUE|WED|THU|FRI|SAT|SUN):([01][0-9]|2[0-3]):[0-5][0-9]$", var.weekly_maintenance_window_start))
     error_message = "Maintenance window must be in format DAY:HH:MM (e.g., TUE:03:30)."
   }
 }
