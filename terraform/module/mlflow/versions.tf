@@ -4,7 +4,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.31.0"  # Pin to a stable version
+      version = "~> 5.73.0"  # Updated for SageMaker MLflow support
     }
   }
 }
