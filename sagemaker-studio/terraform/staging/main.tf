@@ -38,13 +38,29 @@ provider "aws" {
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
+# Auto-discover subnets from the hardcoded VPC if none provided
+data "aws_subnets" "vpc_subnets" {
+  count = length(var.subnet_ids) == 0 ? 1 : 0
+  
+  filter {
+    name   = "vpc-id"
+    values = [var.vpc_id]
+  }
+  
+  # Only use subnets that are available
+  filter {
+    name   = "state"
+    values = ["available"]
+  }
+}
+
 # Local values for consistent naming and tagging
 locals {
   project_name = "sagemaker-studio"
   environment  = "staging"
 
-  # Auto-discovery will be handled by the module
-  selected_subnet_ids = var.subnet_ids
+  # Use provided subnet_ids if available, otherwise auto-discover from VPC
+  selected_subnet_ids = length(var.subnet_ids) > 0 ? var.subnet_ids : data.aws_subnets.vpc_subnets[0].ids
 
   common_tags = merge(var.additional_tags, {
     Project     = local.project_name
