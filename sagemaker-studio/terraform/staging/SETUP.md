@@ -8,9 +8,10 @@ This guide will help you set up the repository for automated SageMaker Studio de
 
 Navigate to your GitHub repository → **Settings** → **Secrets and variables** → **Actions** and add:
 
-#### Required Secret
+#### Required Secrets
 ```
-AWS_ROLE_ARN: arn:aws:iam::YOUR-ACCOUNT-ID:role/github-actions-role
+AWS_ACCESS_KEY_ID: AKIA...
+AWS_SECRET_ACCESS_KEY: your-secret-key
 ```
 
 #### Optional Secrets (with defaults)
@@ -20,44 +21,11 @@ BUCKET_NAME_SUFFIX: zali-staging
 TF_BACKEND_BUCKET: your-terraform-state-bucket
 ```
 
-### ✅ Step 2: AWS OIDC Provider Setup
+### ✅ Step 2: Create AWS IAM User
 
-Create an OIDC provider in AWS IAM if you haven't already:
+Create an IAM user with programmatic access and the necessary permissions.
 
-```bash
-# Using AWS CLI
-aws iam create-open-id-connect-provider \
-  --url https://token.actions.githubusercontent.com \
-  --client-id-list sts.amazonaws.com \
-  --thumbprint-list 6938fd4d98bab03faadb97b34396831e3780aea1
-```
-
-### ✅ Step 3: Create GitHub Actions IAM Role
-
-Create a role that GitHub Actions can assume:
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Federated": "arn:aws:iam::YOUR-ACCOUNT-ID:oidc-provider/token.actions.githubusercontent.com"
-      },
-      "Action": "sts:AssumeRoleWithWebIdentity",
-      "Condition": {
-        "StringEquals": {
-          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
-          "token.actions.githubusercontent.com:sub": "repo:YOUR-USERNAME/infrastructure:ref:refs/heads/main"
-        }
-      }
-    }
-  ]
-}
-```
-
-Attach this policy to the role:
+Attach this policy to the user:
 
 ```json
 {
@@ -89,7 +57,7 @@ Attach this policy to the role:
 }
 ```
 
-### ✅ Step 4: Update Configuration
+### ✅ Step 3: Update Configuration
 
 Edit `terraform.tfvars` to match your environment:
 
@@ -100,7 +68,7 @@ vpc_name   = "your-vpc-name"
 bucket_name_suffix = "your-unique-suffix"
 ```
 
-### ✅ Step 5: Deploy!
+### ✅ Step 4: Deploy!
 
 #### Option A: Automatic Deployment
 ```bash
@@ -122,18 +90,14 @@ After deployment, verify everything works:
 2. **AWS Console**: Verify SageMaker Studio domain is created
 3. **Access Studio**: Use the output URL to access SageMaker Studio
 
-## 🛠️ Alternative Setup (Access Keys)
+## 🔐 Security Note
 
-If you prefer using access keys instead of OIDC:
+The current setup uses AWS access keys for simplicity. For enhanced security in production environments, consider:
 
-1. Create an IAM user with the necessary permissions
-2. Generate access keys
-3. Add these secrets:
-   ```
-   AWS_ACCESS_KEY_ID: AKIA...
-   AWS_SECRET_ACCESS_KEY: your-secret-key
-   ```
-4. Comment out the OIDC configuration in the workflow file
+1. Using AWS OIDC authentication
+2. Implementing least-privilege IAM policies
+3. Rotating access keys regularly
+4. Using AWS Organizations SCPs for additional guardrails
 
 ## 📞 Need Help?
 
