@@ -103,7 +103,16 @@ jobs:
         # Set subnet IDs if provided (comma-separated list)
         if [ -n "${{ secrets.SUBNET_IDS }}" ]; then
           export TF_VAR_subnet_ids='[${{ secrets.SUBNET_IDS }}]'
+        else
+          # Use empty list to trigger auto-discovery
+          export TF_VAR_subnet_ids='[]'
         fi
+        
+        # Debug: Show configuration (without exposing sensitive values)
+        echo "✓ Configuration set:"
+        echo "  - VPC ID: configured"
+        echo "  - Subnet IDs: $(if [ "$TF_VAR_subnet_ids" = "[]" ]; then echo "auto-discovery"; else echo "explicit list"; fi)"
+        echo "  - Region: $TF_VAR_aws_region"
         
         # Validate that required variables are set
         if [ -z "$TF_VAR_vpc_id" ]; then
@@ -179,10 +188,13 @@ jobs:
          export TF_VAR_vpc_id="${{ secrets.VPC_ID }}"
          export TF_VAR_bucket_name_suffix="${{ secrets.BUCKET_NAME_SUFFIX || 'zali-staging' }}"
          
-         # Set subnet IDs if provided (comma-separated list)
-         if [ -n "${{ secrets.SUBNET_IDS }}" ]; then
-           export TF_VAR_subnet_ids='[${{ secrets.SUBNET_IDS }}]'
-         fi
+                   # Set subnet IDs if provided (comma-separated list)
+          if [ -n "${{ secrets.SUBNET_IDS }}" ]; then
+            export TF_VAR_subnet_ids='[${{ secrets.SUBNET_IDS }}]'
+          else
+            # Use empty list to trigger auto-discovery
+            export TF_VAR_subnet_ids='[]'
+          fi
          
          # Validate that required variables are set  
          if [ -z "$TF_VAR_vpc_id" ]; then
@@ -204,10 +216,13 @@ jobs:
          export TF_VAR_vpc_id="${{ secrets.VPC_ID }}"
          export TF_VAR_bucket_name_suffix="${{ secrets.BUCKET_NAME_SUFFIX || 'zali-staging' }}"
          
-         # Set subnet IDs if provided (comma-separated list)
-         if [ -n "${{ secrets.SUBNET_IDS }}" ]; then
-           export TF_VAR_subnet_ids='[${{ secrets.SUBNET_IDS }}]'
-         fi
+                   # Set subnet IDs if provided (comma-separated list)
+          if [ -n "${{ secrets.SUBNET_IDS }}" ]; then
+            export TF_VAR_subnet_ids='[${{ secrets.SUBNET_IDS }}]'
+          else
+            # Use empty list to trigger auto-discovery
+            export TF_VAR_subnet_ids='[]'
+          fi
          
          # Validate that required variables are set  
          if [ -z "$TF_VAR_vpc_id" ]; then
