@@ -43,6 +43,8 @@ output "s3_bucket_name" {
   value       = var.enable_s3_bucket ? aws_s3_bucket.ml_artifacts[0].id : null
 }
 
+
+
 output "s3_bucket_arn" {
   description = "S3 bucket ARN for ML artifacts"
   value       = var.enable_s3_bucket ? aws_s3_bucket.ml_artifacts[0].arn : null
