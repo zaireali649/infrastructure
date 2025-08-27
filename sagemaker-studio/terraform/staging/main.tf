@@ -3,11 +3,11 @@
 
 terraform {
   required_version = ">= 1.5"
-
+  
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.0"
+      version = "~> 5.31.0"  # Pin to stable version to avoid provider issues
     }
   }
 
@@ -20,13 +20,18 @@ terraform {
   }
 }
 
-# Configure the AWS provider
+# Configure the AWS provider with explicit settings
 provider "aws" {
   region = var.aws_region
-
+  
+  # Explicit configuration to avoid provider issues
   default_tags {
     tags = local.common_tags
   }
+  
+  # Ensure consistent behavior
+  retry_mode = "standard"
+  max_retries = 3
 }
 
 # Data sources for current AWS account and region

@@ -1,9 +1,17 @@
+# Validate VPC exists early in the plan
+data "aws_vpc" "validation" {
+  id = var.vpc_id
+}
+
 # Local values for resource naming
 locals {
   name_prefix         = "${var.project_name}-${var.environment}"
   domain_name         = var.domain_name != null ? var.domain_name : "${local.name_prefix}-studio-domain"
   execution_role_name = var.execution_role_name != null ? var.execution_role_name : "${local.name_prefix}-execution-role"
   bucket_name         = var.s3_bucket_name != null ? var.s3_bucket_name : "${local.name_prefix}-ml-bucket-${var.bucket_name_suffix}"
+
+  # Ensure VPC is validated before use
+  validated_vpc_id = data.aws_vpc.validation.id
 
   common_tags = merge(var.tags, {
     Environment = var.environment
@@ -149,7 +157,7 @@ resource "aws_iam_role_policy_attachment" "additional_policies" {
 resource "aws_sagemaker_domain" "studio_domain" {
   domain_name             = local.domain_name
   auth_mode               = var.auth_mode
-  vpc_id                  = var.vpc_id
+  vpc_id                  = local.validated_vpc_id  # Use validated VPC ID
   subnet_ids              = var.subnet_ids
   app_network_access_type = var.app_network_access_type
   tags                    = local.common_tags
