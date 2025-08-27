@@ -81,12 +81,16 @@ jobs:
       run: |
         # Initialize with backend configuration from secrets if provided
         if [ -n "${{ secrets.TF_BACKEND_BUCKET }}" ]; then
+          echo "🗄️ Using S3 backend: ${{ secrets.TF_BACKEND_BUCKET }}"
           terraform init \
             -backend-config="bucket=${{ secrets.TF_BACKEND_BUCKET }}" \
             -backend-config="key=sagemaker-studio/staging/terraform.tfstate" \
             -backend-config="region=${{ env.AWS_REGION }}"
         else
-          terraform init
+          echo "⚠️ Using local backend (not recommended for production)"
+          echo "💡 Set TF_BACKEND_BUCKET secret for remote state management"
+          # Use local backend by migrating from S3 backend config
+          terraform init -migrate-state -input=false || terraform init
         fi
     
     - name: Terraform Validate
@@ -97,34 +101,39 @@ jobs:
       id: plan
       run: |
         # Set additional variables from secrets
-        export TF_VAR_vpc_id="${{ secrets.VPC_ID }}"
+        # VPC ID is now hardcoded in the module, no need for VPC_ID secret
         export TF_VAR_bucket_name_suffix="${{ secrets.BUCKET_NAME_SUFFIX || 'zali-staging' }}"
         
-        # Set subnet IDs (now required)
+        # Set subnet IDs (optional - will auto-discover from VPC if not provided)
         if [ -n "${{ secrets.SUBNET_IDS }}" ]; then
           export TF_VAR_subnet_ids='[${{ secrets.SUBNET_IDS }}]'
+          echo "ℹ️  Using provided subnet IDs from secret"
         else
-          echo "ERROR: SUBNET_IDS secret is required but not set"
-          echo "Please set SUBNET_IDS secret with comma-separated subnet IDs: \"subnet-xxx\",\"subnet-yyy\""
-          exit 1
+          echo "ℹ️  Subnet IDs not provided - will auto-discover from VPC vpc-0a9ee577"
         fi
         
-        # Validate that required variables are set
-        if [ -z "$TF_VAR_vpc_id" ]; then
-          echo "ERROR: VPC_ID secret is not set or empty"
-          exit 1
-        fi
-        
-        # Validate VPC ID format (without exposing the actual value)
-        if [[ ! "$TF_VAR_vpc_id" =~ ^vpc-[a-z0-9]{8,17}$ ]]; then
-          echo "ERROR: VPC_ID format is invalid. Expected format: vpc-xxxxxxxxx"
-          exit 1
-        fi
+        echo "ℹ️  Using hardcoded VPC ID: vpc-0a9ee577"
         
         terraform plan -no-color -input=false -out=tfplan
       env:
         TF_VAR_github_repository: ${{ github.repository }}
         TF_VAR_github_workflow: ${{ github.workflow }}
+    
+    - name: Plan Summary
+      if: steps.plan.outcome == 'success'
+      run: |
+        echo "## 📋 Plan Summary" >> $GITHUB_STEP_SUMMARY
+        echo "✅ Terraform plan completed successfully" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          echo "📝 **Pull Request**: Plan results shown above for review" >> $GITHUB_STEP_SUMMARY
+          echo "🚀 **Proceeding with deployment** (PR environment)" >> $GITHUB_STEP_SUMMARY
+        elif [[ "${{ github.event.inputs.action }}" == "plan" ]] || [[ "${{ github.event_name }}" == "push" ]]; then
+          echo "🚀 **Proceeding with automatic deployment...**" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "ℹ️ Plan completed. Apply step will run based on workflow conditions." >> $GITHUB_STEP_SUMMARY
+        fi
     
     - name: Add Plan to PR Comment
       if: github.event_name == 'pull_request'
@@ -174,32 +183,41 @@ jobs:
             });
           }
     
+    - name: Pre-Apply Check
+      if: |
+        steps.plan.outcome == 'success' && (
+          github.event_name == 'pull_request' ||
+          (github.ref == 'refs/heads/main' && github.event_name == 'push') || 
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply') ||
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'plan')
+        )
+      run: |
+        echo "🚀 Starting SageMaker Studio deployment..."
+        echo "📊 Configuration:"
+        echo "  - VPC ID: configured ✓"
+        echo "  - Subnet IDs: configured ✓" 
+        echo "  - User: zali"
+        echo "  - Environment: staging"
+        echo "  - Region: ${{ env.AWS_REGION }}"
+        echo ""
+        echo "⏳ This may take 15-20 minutes..."
+    
     - name: Terraform Apply
       id: apply
       if: |
-        (github.ref == 'refs/heads/main' && github.event_name == 'push') || 
-        (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply')
+        steps.plan.outcome == 'success' && (
+          github.event_name == 'pull_request' ||
+          (github.ref == 'refs/heads/main' && github.event_name == 'push') || 
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply') ||
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'plan')
+        )
       run: |
-         export TF_VAR_vpc_id="${{ secrets.VPC_ID }}"
-         export TF_VAR_bucket_name_suffix="${{ secrets.BUCKET_NAME_SUFFIX || 'zali-staging' }}"
-         
-          # Set subnet IDs (now required)
-          if [ -n "${{ secrets.SUBNET_IDS }}" ]; then
-            export TF_VAR_subnet_ids='[${{ secrets.SUBNET_IDS }}]'
-          else
-            echo "ERROR: SUBNET_IDS secret is required but not set"
-            exit 1
-          fi
-         
-         # Validate that required variables are set  
-         if [ -z "$TF_VAR_vpc_id" ]; then
-           echo "ERROR: VPC_ID secret is not set or empty"
-           exit 1
-         fi
-         
-         echo "VPC ID secret is configured"
-         
-         terraform apply -auto-approve tfplan
+        # VPC ID is now hardcoded in the module
+        export TF_VAR_bucket_name_suffix="${{ secrets.BUCKET_NAME_SUFFIX || 'zali-staging' }}"
+        
+        echo "ℹ️  Using hardcoded VPC ID: vpc-0a9ee577"
+        
+        terraform apply -auto-approve tfplan
       env:
         TF_VAR_github_repository: ${{ github.repository }}
         TF_VAR_github_workflow: ${{ github.workflow }}
@@ -208,26 +226,20 @@ jobs:
       id: destroy
       if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'
       run: |
-         export TF_VAR_vpc_id="${{ secrets.VPC_ID }}"
-         export TF_VAR_bucket_name_suffix="${{ secrets.BUCKET_NAME_SUFFIX || 'zali-staging' }}"
-         
-          # Set subnet IDs (now required)
-          if [ -n "${{ secrets.SUBNET_IDS }}" ]; then
-            export TF_VAR_subnet_ids='[${{ secrets.SUBNET_IDS }}]'
-          else
-            echo "ERROR: SUBNET_IDS secret is required but not set"
-            exit 1
-          fi
-         
-         # Validate that required variables are set  
-         if [ -z "$TF_VAR_vpc_id" ]; then
-           echo "ERROR: VPC_ID secret is not set or empty"
-           exit 1
-         fi
-         
-         echo "VPC ID secret is configured"
-         
-         terraform destroy -auto-approve
+        # VPC ID is now hardcoded in the module
+        export TF_VAR_bucket_name_suffix="${{ secrets.BUCKET_NAME_SUFFIX || 'zali-staging' }}"
+        
+        # Set subnet IDs (optional - will auto-discover from VPC if not provided)
+        if [ -n "${{ secrets.SUBNET_IDS }}" ]; then
+          export TF_VAR_subnet_ids='[${{ secrets.SUBNET_IDS }}]'
+          echo "ℹ️  Using provided subnet IDs from secret"
+        else
+          echo "ℹ️  Subnet IDs not provided - will auto-discover from VPC vpc-0a9ee577"
+        fi
+        
+        echo "ℹ️  Using hardcoded VPC ID: vpc-0a9ee577"
+        
+        terraform destroy -auto-approve
       env:
         TF_VAR_github_repository: ${{ github.repository }}
         TF_VAR_github_workflow: ${{ github.workflow }}

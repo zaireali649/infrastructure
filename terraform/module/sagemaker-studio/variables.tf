@@ -93,7 +93,7 @@ variable "additional_execution_role_policies" {
 variable "default_instance_type" {
   description = "Default instance type for SageMaker Studio apps"
   type        = string
-  default     = "ml.t3.medium"
+  default     = "system"
 }
 
 variable "sharing_settings" {

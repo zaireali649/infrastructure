@@ -5,9 +5,11 @@
 aws_region = "us-east-1" # Update this to your preferred region
 
 # Network Configuration
-# Update these values to match your actual VPC and subnet IDs
-vpc_id     = "vpc-xxxxxxxxx"                          # Your VPC ID
-subnet_ids = ["subnet-xxxxxxxxx", "subnet-yyyyyyyyy"] # Your subnet IDs (required)
+# VPC ID has a default value of vpc-0a9ee577 in variables.tf (can be overridden)
+# vpc_id = "vpc-0a9ee577"  # Uncomment to override default
+
+# Subnet IDs (optional - will auto-discover from VPC if not provided)
+# subnet_ids = ["subnet-xxxxxxxxx", "subnet-yyyyyyyyy"]  # Uncomment to override auto-discovery
 
 # Project Configuration
 bucket_name_suffix = "zali-staging" # This will create bucket: sagemaker-studio-staging-ml-bucket-zali-staging
@@ -19,11 +21,11 @@ user_profile_name = "zali"
 auth_mode               = "IAM"
 app_network_access_type = "PublicInternetOnly" # Change to "VpcOnly" for production
 
-# Instance Types (optimized for staging/cost)
-default_instance_type        = "ml.t3.medium"
-jupyter_instance_type        = "ml.t3.medium"
+# Instance Types (updated for SageMaker Studio compatibility)
+default_instance_type        = "system"
+jupyter_instance_type        = "system"
 kernel_gateway_instance_type = "ml.t3.medium"
-tensorboard_instance_type    = "ml.t3.medium"
+tensorboard_instance_type    = "system"
 
 # S3 Configuration
 enable_s3_bucket = true

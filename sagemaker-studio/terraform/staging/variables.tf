@@ -9,6 +9,7 @@ variable "aws_region" {
 variable "vpc_id" {
   description = "VPC ID to deploy SageMaker Studio into"
   type        = string
+  default     = "vpc-0a9ee577"  # Hardcoded for staging to bypass provider issues
 
   validation {
     condition     = can(regex("^vpc-[a-z0-9]{8,17}$", var.vpc_id))
@@ -17,19 +18,15 @@ variable "vpc_id" {
 }
 
 variable "subnet_ids" {
-  description = "List of subnet IDs for SageMaker Studio"
+  description = "List of subnet IDs for SageMaker Studio (optional - will auto-discover from VPC if not provided)"
   type        = list(string)
-
-  validation {
-    condition     = length(var.subnet_ids) > 0
-    error_message = "At least one subnet ID must be provided."
-  }
+  default     = []  # Auto-discover subnets if not provided
 
   validation {
     condition = alltrue([
       for subnet_id in var.subnet_ids : can(regex("^subnet-[a-z0-9]{8,17}$", subnet_id))
     ])
-    error_message = "All subnet IDs must be in the format subnet-xxxxxxxxx."
+    error_message = "All subnet IDs must be valid (format: subnet-xxxxxxxxx)."
   }
 }
 
@@ -72,13 +69,13 @@ variable "app_network_access_type" {
 variable "default_instance_type" {
   description = "Default instance type for SageMaker Studio apps"
   type        = string
-  default     = "ml.t3.medium"
+  default     = "system"
 }
 
 variable "jupyter_instance_type" {
   description = "Instance type for Jupyter Server App"
   type        = string
-  default     = "ml.t3.medium"
+  default     = "system"
 }
 
 variable "kernel_gateway_instance_type" {
@@ -90,7 +87,7 @@ variable "kernel_gateway_instance_type" {
 variable "tensorboard_instance_type" {
   description = "Instance type for TensorBoard App"
   type        = string
-  default     = "ml.t3.medium"
+  default     = "system"
 }
 
 variable "enable_s3_bucket" {

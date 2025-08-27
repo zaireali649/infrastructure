@@ -3,42 +3,64 @@
 
 terraform {
   required_version = ">= 1.5"
-
+  
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.0"
+      version = "~> 5.31.0"  # Pin to stable version to avoid provider issues
     }
   }
 
-  # Uncomment and configure for remote state management
-  # backend "s3" {
-  #   bucket = "your-terraform-state-bucket"
-  #   key    = "sagemaker-studio/staging/terraform.tfstate"
-  #   region = "us-east-1"
-  # }
+  # Remote state management (configure TF_BACKEND_BUCKET secret to enable)
+  backend "s3" {
+    # These values will be provided via -backend-config in CI/CD
+    # bucket = "configured-via-backend-config"
+    # key    = "configured-via-backend-config" 
+    # region = "configured-via-backend-config"
+  }
 }
 
-# Configure the AWS provider
+# Configure the AWS provider with explicit settings
 provider "aws" {
   region = var.aws_region
-
+  
+  # Explicit configuration to avoid provider issues
   default_tags {
     tags = local.common_tags
   }
+  
+  # Ensure consistent behavior
+  retry_mode = "standard"
+  max_retries = 3
 }
 
 # Data sources for current AWS account and region
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
+# Auto-discover subnets from the hardcoded VPC if none provided
+data "aws_subnets" "vpc_subnets" {
+  count = length(var.subnet_ids) == 0 ? 1 : 0
+  
+  filter {
+    name   = "vpc-id"
+    values = [var.vpc_id]
+  }
+  
+  # Only use subnets that are available
+  filter {
+    name   = "state"
+    values = ["available"]
+  }
+}
+
 # Local values for consistent naming and tagging
 locals {
   project_name = "sagemaker-studio"
   environment  = "staging"
 
-  # Use provided subnet_ids directly - no auto-discovery to avoid data source issues
-  selected_subnet_ids = var.subnet_ids
+  # Use provided subnet_ids if available, otherwise auto-discover from VPC
+  selected_subnet_ids = length(var.subnet_ids) > 0 ? var.subnet_ids : data.aws_subnets.vpc_subnets[0].ids
 
   common_tags = merge(var.additional_tags, {
     Project     = local.project_name
@@ -57,7 +79,7 @@ module "sagemaker_studio" {
   project_name       = local.project_name
   environment        = local.environment
   bucket_name_suffix = var.bucket_name_suffix
-  vpc_id             = var.vpc_id
+  vpc_id             = var.vpc_id  # Hardcoded to vpc-0a9ee577 in variables.tf
   subnet_ids         = local.selected_subnet_ids
 
   # User configuration
