@@ -9,7 +9,11 @@ variable "aws_region" {
 variable "vpc_id" {
   description = "VPC ID to deploy SageMaker Studio into"
   type        = string
-  default     = null
+  
+  validation {
+    condition     = can(regex("^vpc-[a-z0-9]{8,17}$", var.vpc_id))
+    error_message = "VPC ID must be in the format vpc-xxxxxxxxx."
+  }
 }
 
 variable "subnet_ids" {
