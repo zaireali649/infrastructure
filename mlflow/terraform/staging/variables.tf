@@ -21,10 +21,6 @@ variable "mlflow_version" {
   description = "MLflow version for the tracking server"
   type        = string
   default     = "3.0"
-  validation {
-    condition     = can(regex("^[0-9]+\\.[0-9]+\\.[0-9]+$", var.mlflow_version))
-    error_message = "MLflow version must be in semantic version format (e.g., 3.0)."
-  }
 }
 
 variable "automatic_model_registration" {
