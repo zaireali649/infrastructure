@@ -133,7 +133,10 @@ jobs:
         echo "✅ Terraform plan completed successfully" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         
-        if [[ "${{ github.event.inputs.action }}" == "plan" ]] || [[ "${{ github.event_name }}" == "push" ]]; then
+        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          echo "📝 **Pull Request**: Plan results shown above for review" >> $GITHUB_STEP_SUMMARY
+          echo "🚫 **No deployment** will occur for pull requests" >> $GITHUB_STEP_SUMMARY
+        elif [[ "${{ github.event.inputs.action }}" == "plan" ]] || [[ "${{ github.event_name }}" == "push" ]]; then
           echo "🚀 **Proceeding with automatic deployment...**" >> $GITHUB_STEP_SUMMARY
         else
           echo "ℹ️ Plan completed. Apply step will run based on workflow conditions." >> $GITHUB_STEP_SUMMARY
@@ -189,7 +192,8 @@ jobs:
     
     - name: Pre-Apply Check
       if: |
-        steps.plan.outcome == 'success' && (
+        steps.plan.outcome == 'success' && 
+        github.event_name != 'pull_request' && (
           (github.ref == 'refs/heads/main' && github.event_name == 'push') || 
           (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply') ||
           (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'plan')
@@ -208,7 +212,8 @@ jobs:
     - name: Terraform Apply
       id: apply
       if: |
-        steps.plan.outcome == 'success' && (
+        steps.plan.outcome == 'success' && 
+        github.event_name != 'pull_request' && (
           (github.ref == 'refs/heads/main' && github.event_name == 'push') || 
           (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply') ||
           (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'plan')
