@@ -64,11 +64,15 @@ output "aws_region" {
 output "debug_info" {
   description = "Debug information for troubleshooting"
   value = {
-    vpc_id_provided     = var.vpc_id
-    subnet_ids_provided = var.subnet_ids
-    subnet_ids_count    = length(var.subnet_ids)
-    discovered_subnets  = "auto-discovery disabled"
-    selected_subnets    = local.selected_subnet_ids
+    vpc_id_provided        = var.vpc_id
+    vpc_id_length         = length(var.vpc_id)
+    vpc_id_first4         = substr(var.vpc_id, 0, 4)
+    vpc_id_last4          = substr(var.vpc_id, length(var.vpc_id) - 4, 4)
+    subnet_ids_provided   = var.subnet_ids
+    subnet_ids_count      = length(var.subnet_ids)
+    discovered_subnets    = "auto-discovery disabled"
+    selected_subnets      = local.selected_subnet_ids
+    aws_region           = data.aws_region.current.name
   }
 }
 
