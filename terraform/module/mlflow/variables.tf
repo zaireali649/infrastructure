@@ -54,12 +54,12 @@ variable "automatic_model_registration" {
 }
 
 variable "weekly_maintenance_window_start" {
-  description = "Weekly maintenance window start time (e.g., Tue:03:30)"
+  description = "Weekly maintenance window start time (e.g., TUE:03:30)"
   type        = string
-  default     = "Tue:03:30"
+  default     = "TUE:03:30"
   validation {
-    condition = can(regex("^(Mon|Tue|Wed|Thu|Fri|Sat|Sun):([01][0-9]|2[0-3]):[0-5][0-9]$", var.weekly_maintenance_window_start))
-    error_message = "Maintenance window must be in format Day:HH:MM with title case day names (e.g., Tue:03:30)."
+    condition = can(regex("(?i)^(MON|TUE|WED|THU|FRI|SAT|SUN):([01][0-9]|2[0-3]):[0-5][0-9]$", var.weekly_maintenance_window_start))
+    error_message = "Maintenance window must be in format DAY:HH:MM (e.g., TUE:03:30)."
   }
 }
 
