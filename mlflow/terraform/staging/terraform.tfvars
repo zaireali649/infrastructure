@@ -10,7 +10,7 @@ bucket_name_suffix = "zali-staging" # This will create bucket: mlflow-staging-ml
 # MLflow Configuration
 mlflow_version                   = "2.8.1"      # Latest stable version
 automatic_model_registration     = true         # Enable automatic model registration
-weekly_maintenance_window_start  = "TUE:03:30"  # Tuesday 3:30 AM maintenance window
+weekly_maintenance_window_start  = "Tue:03:30"  # Tuesday 3:30 AM maintenance window
 
 # S3 Configuration - Choose one option:
 
