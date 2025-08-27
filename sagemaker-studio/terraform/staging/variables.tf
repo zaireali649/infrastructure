@@ -72,13 +72,13 @@ variable "app_network_access_type" {
 variable "default_instance_type" {
   description = "Default instance type for SageMaker Studio apps"
   type        = string
-  default     = "ml.t3.medium"
+  default     = "system"
 }
 
 variable "jupyter_instance_type" {
   description = "Instance type for Jupyter Server App"
   type        = string
-  default     = "ml.t3.medium"
+  default     = "system"
 }
 
 variable "kernel_gateway_instance_type" {
@@ -90,7 +90,7 @@ variable "kernel_gateway_instance_type" {
 variable "tensorboard_instance_type" {
   description = "Instance type for TensorBoard App"
   type        = string
-  default     = "ml.t3.medium"
+  default     = "system"
 }
 
 variable "enable_s3_bucket" {
