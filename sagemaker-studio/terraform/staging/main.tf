@@ -34,7 +34,7 @@ data "aws_region" "current" {}
 
 # Data sources for VPC and subnets
 data "aws_vpc" "main" {
-  id = "var.vpc_id"
+  id = var.vpc_id
   
   lifecycle {
     postcondition {
@@ -48,7 +48,7 @@ data "aws_vpc" "main" {
 data "aws_subnets" "all" {
   filter {
     name   = "vpc-id"
-    values = ["var.vpc_id"]
+    values = [var.vpc_id]
   }
 }
 
