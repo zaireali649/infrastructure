@@ -23,7 +23,7 @@ COPY pyproject.toml uv.lock ./
 
 # Create virtual environment and install dependencies
 RUN uv venv /opt/venv && \
-    uv sync --frozen --no-dev && \
+    uv sync --frozen --no-dev --no-install-project && \
     rm -rf /tmp/uv-cache
 
 # Production stage
