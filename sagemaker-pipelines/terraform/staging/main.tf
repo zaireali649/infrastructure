@@ -75,7 +75,7 @@ data "aws_s3_bucket" "ml_bucket" {
 
 # Call the SageMaker Pipelines module
 module "sagemaker_pipelines" {
-  source = "../../../module/sagemaker-pipelines"
+  source = "../../../terraform/module/sagemaker-pipelines"
 
   # Core configuration
   project_name = local.project_name
