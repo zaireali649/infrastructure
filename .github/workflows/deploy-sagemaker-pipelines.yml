@@ -57,10 +57,12 @@ jobs:
           FULL_IMAGE_NAME="${ECR_REGISTRY}/${REPO_NAME}:${IMAGE_TAG}"
           LATEST_IMAGE_NAME="${ECR_REGISTRY}/${REPO_NAME}:latest"
           
-          # Create ECR repository if it doesn't exist
-          aws ecr describe-repositories --repository-names $REPO_NAME --region $AWS_REGION || \
-          aws ecr create-repository --repository-name $REPO_NAME --region $AWS_REGION \
-            --image-scanning-configuration scanOnPush=true
+          # Verify ECR repository exists
+          if ! aws ecr describe-repositories --repository-names $REPO_NAME --region $AWS_REGION >/dev/null 2>&1; then
+            echo "❌ ECR repository '$REPO_NAME' does not exist!"
+            echo "Please create the repository first: aws ecr create-repository --repository-name $REPO_NAME --region $AWS_REGION"
+            exit 1
+          fi
 
           # Build and push image
           docker build -t $FULL_IMAGE_NAME -t $LATEST_IMAGE_NAME .

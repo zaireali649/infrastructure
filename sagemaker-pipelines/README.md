@@ -61,8 +61,29 @@ sagemaker-pipelines/
 - **Terraform** >= 1.5
 - **uv** for Python dependency management
 - **Existing MLflow tracking server** (deployed via your existing mlflow module)
+- **ECR repositories must be created** before running build scripts:
+  - `ml-platform-staging-training`
+  - `ml-platform-staging-inference`
 
-### 2. Build and Push Container Images
+### 2. Create ECR Repositories
+
+Create the required ECR repositories if they don't exist:
+
+```bash
+# Create training repository
+aws ecr create-repository \
+  --repository-name ml-platform-staging-training \
+  --region us-east-1 \
+  --image-scanning-configuration scanOnPush=true
+
+# Create inference repository
+aws ecr create-repository \
+  --repository-name ml-platform-staging-inference \
+  --region us-east-1 \
+  --image-scanning-configuration scanOnPush=true
+```
+
+### 3. Build and Push Container Images
 
 ```bash
 # Build and push both training and inference images
@@ -73,7 +94,7 @@ sagemaker-pipelines/
 ./scripts/build_push_ecr.sh inference
 ```
 
-### 3. Configure Environment
+### 4. Configure Environment
 
 Edit `terraform/staging/terraform.tfvars`:
 
@@ -87,7 +108,7 @@ training_image_uri = "123456789012.dkr.ecr.us-east-1.amazonaws.com/..."
 inference_image_uri = "123456789012.dkr.ecr.us-east-1.amazonaws.com/..."
 ```
 
-### 4. Deploy Infrastructure
+### 5. Deploy Infrastructure
 
 ```bash
 cd terraform/staging
@@ -96,7 +117,7 @@ terraform plan
 terraform apply
 ```
 
-### 5. Upload Training Data
+### 6. Upload Training Data
 
 Upload your training data to the configured S3 bucket:
 
@@ -104,7 +125,7 @@ Upload your training data to the configured S3 bucket:
 aws s3 cp your-dataset.parquet s3://mlflow-staging-mlflow-artifacts-zali-staging/datasets/training/
 ```
 
-### 6. Test Pipeline Execution
+### 7. Test Pipeline Execution
 
 ```bash
 # Generate parameters for manual testing
@@ -240,10 +261,11 @@ Each environment has its own:
 
 ### Common Issues
 
-1. **ECR Push Fails**: Ensure AWS CLI is configured and Docker is running
-2. **Terraform Apply Fails**: Check IAM permissions and resource limits
-3. **Training Job Fails**: Check CloudWatch logs and data format
-4. **Kafka Connection Fails**: Verify bootstrap servers and security settings
+1. **ECR Repository Missing**: Create ECR repositories before running build scripts
+2. **ECR Push Fails**: Ensure AWS CLI is configured and Docker is running
+3. **Terraform Apply Fails**: Check IAM permissions and resource limits
+4. **Training Job Fails**: Check CloudWatch logs and data format
+5. **Kafka Connection Fails**: Verify bootstrap servers and security settings
 
 ### Debug Commands
 

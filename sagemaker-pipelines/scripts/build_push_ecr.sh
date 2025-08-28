@@ -1,5 +1,6 @@
 #!/bin/bash
-# Build and push Docker images to ECR for SageMaker Pipelines
+# Build and push Docker images to existing ECR repositories for SageMaker Pipelines
+# Note: ECR repositories must exist before running this script
 
 set -e
 
@@ -50,38 +51,19 @@ check_ecr_repo() {
     fi
 }
 
-# Function to create ECR repository if it doesn't exist
-create_ecr_repo() {
+# Function to verify ECR repository exists
+verify_ecr_repo() {
     local repo_name=$1
-    print_status "Creating ECR repository: $repo_name"
+    print_status "Verifying ECR repository exists: $repo_name"
     
-    aws ecr create-repository \
-        --repository-name "$repo_name" \
-        --region "$AWS_REGION" \
-        --image-scanning-configuration scanOnPush=true \
-        --tags Key=Project,Value="$PROJECT_NAME" \
-               Key=Environment,Value="$ENVIRONMENT" \
-               Key=ManagedBy,Value="terraform"
+    if ! aws ecr describe-repositories --repository-names "$repo_name" --region "$AWS_REGION" >/dev/null 2>&1; then
+        print_error "ECR repository '$repo_name' does not exist!"
+        print_error "Please create the repository first or ensure the name is correct."
+        print_error "You can create it with: aws ecr create-repository --repository-name $repo_name --region $AWS_REGION"
+        exit 1
+    fi
     
-    # Set lifecycle policy to keep only last 10 images
-    aws ecr put-lifecycle-policy \
-        --repository-name "$repo_name" \
-        --region "$AWS_REGION" \
-        --lifecycle-policy-text '{
-            "rules": [{
-                "rulePriority": 1,
-                "description": "Keep last 10 images",
-                "selection": {
-                    "tagStatus": "tagged",
-                    "tagPrefixList": ["v"],
-                    "countType": "imageCountMoreThan",
-                    "countNumber": 10
-                },
-                "action": {
-                    "type": "expire"
-                }
-            }]
-        }'
+    print_success "ECR repository verified: $repo_name"
 }
 
 # Function to build and push Docker image
@@ -194,14 +176,9 @@ main() {
     
     print_success "ECR login successful"
     
-    # Check and create ECR repositories
+    # Verify ECR repositories exist
     for repo in "$TRAINING_REPO" "$INFERENCE_REPO"; do
-        if check_ecr_repo "$repo"; then
-            print_status "ECR repository already exists: $repo"
-        else
-            create_ecr_repo "$repo"
-            print_success "Created ECR repository: $repo"
-        fi
+        verify_ecr_repo "$repo"
     done
     
     # Build and push training image
@@ -232,25 +209,25 @@ case "${1:-}" in
     "training")
         print_status "Building training image only..."
         aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-        if ! check_ecr_repo "$TRAINING_REPO"; then
-            create_ecr_repo "$TRAINING_REPO"
-        fi
+        verify_ecr_repo "$TRAINING_REPO"
         training_uri=$(build_and_push "training" "$TRAINING_REPO" "$TRAINING_TAG")
         echo "Training image: $training_uri"
         ;;
     "inference")
         print_status "Building inference image only..."
         aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-        if ! check_ecr_repo "$INFERENCE_REPO"; then
-            create_ecr_repo "$INFERENCE_REPO"
-        fi
+        verify_ecr_repo "$INFERENCE_REPO"
         inference_uri=$(build_and_push "inference" "$INFERENCE_REPO" "$INFERENCE_TAG")
         echo "Inference image: $inference_uri"
         ;;
     "help"|"-h"|"--help")
         echo "Usage: $0 [training|inference]"
         echo
-        echo "Build and push Docker images to ECR for SageMaker Pipelines"
+        echo "Build and push Docker images to existing ECR repositories for SageMaker Pipelines"
+        echo
+        echo "Prerequisites:"
+        echo "  - ECR repositories must exist before running this script"
+        echo "  - Required repositories: ml-platform-staging-training, ml-platform-staging-inference"
         echo
         echo "Options:"
         echo "  training   Build and push only the training image"

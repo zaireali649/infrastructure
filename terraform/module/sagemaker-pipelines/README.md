@@ -227,7 +227,7 @@ This module requires the following existing infrastructure:
 
 ### Required
 - **S3 Bucket**: Existing S3 bucket for data and model storage
-- **ECR Repositories**: Existing ECR repositories with training and/or inference images
+- **ECR Repositories**: Existing ECR repositories with training and/or inference images (must be created before using this module)
 
 ### Optional
 - **VPC**: Existing VPC with appropriate networking setup (leave empty for public subnets)
@@ -247,6 +247,12 @@ This module requires the following existing infrastructure:
 - **Both pipelines are optional** - you can enable training only, processing only, or both
 - **Scheduling is optional** - can be disabled for manual execution
 - **VPC integration is optional** - can run in public subnets if no VPC specified
+
+### ECR Repository Management
+- **This module does NOT create ECR repositories** - they must exist before use
+- ECR repositories should be created via separate infrastructure or manually
+- Repository naming convention: typically `{project_name}-{environment}-{service}` (e.g., `ml-platform-staging-training`)
+- Build scripts will verify repository existence and fail if repositories don't exist
 
 ## Inputs
 
