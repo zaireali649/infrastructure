@@ -23,7 +23,7 @@ data "aws_s3_bucket" "ml_bucket" {
 
 # Call the SageMaker Pipelines module
 module "sagemaker_pipelines" {
-  source = "../../module/sagemaker-pipelines"
+  source = "../../../module/sagemaker-pipelines"
 
   # Core configuration
   project_name = var.project_name
