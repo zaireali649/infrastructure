@@ -12,21 +12,4 @@ terraform {
   }
 }
 
-# Configure the AWS provider with explicit settings
-provider "aws" {
-  region = var.aws_region
-  
-  # Explicit configuration to avoid provider issues
-  default_tags {
-    tags = merge(var.tags, {
-      Project     = var.project_name
-      Environment = var.environment
-      ManagedBy   = "terraform"
-      Component   = "sagemaker-pipelines"
-    })
-  }
-  
-  # Ensure consistent behavior
-  retry_mode = "standard"
-  max_retries = 3
-}
+

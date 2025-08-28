@@ -51,7 +51,7 @@ output "scheduler_role_arn" {
 # S3 Configuration Outputs
 output "s3_bucket_name" {
   description = "Name of the S3 bucket used for ML data"
-  value       = var.s3_bucket_name
+  value       = local.s3_bucket_name
 }
 
 output "s3_bucket_arn" {
@@ -62,19 +62,18 @@ output "s3_bucket_arn" {
 # Container Image Outputs
 output "training_image_uri" {
   description = "URI of the training container image"
-  value       = var.training_image_uri
+  value       = local.training_image_uri
 }
 
 output "inference_image_uri" {
   description = "URI of the inference container image"
-  value       = var.inference_image_uri
+  value       = local.inference_image_uri
 }
 
 # MLflow Configuration
 output "mlflow_tracking_uri" {
   description = "MLflow tracking server URI"
-  value       = var.mlflow_tracking_uri
-  sensitive   = true
+  value       = local.mlflow_tracking_uri
 }
 
 # Quick Start Commands

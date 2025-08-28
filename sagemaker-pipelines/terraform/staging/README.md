@@ -38,7 +38,8 @@ This Terraform configuration deploys a complete MLOps pipeline for Iris classifi
 - **Runtime**: 20 minutes max
 
 ### 3. MLflow Integration
-- Uses SageMaker managed MLflow for model versioning
+- Uses SageMaker managed MLflow server: `mlflow-staging-mlflow`
+- Tracking URI: Automatically constructed as `https://mlflow-staging-mlflow.{region}.amazonaws.com`
 - Model name: `iris-model`
 - Automatic model promotion to Production stage
 
@@ -125,7 +126,7 @@ aws events list-rules --region us-east-1
 | `s3_bucket_name` | S3 bucket for ML data | `my-ml-bucket-staging` |
 | `training_image_uri` | ECR URI for training | `123456789012.dkr.ecr.us-east-1.amazonaws.com/iris-training:latest` |
 | `inference_image_uri` | ECR URI for inference | `123456789012.dkr.ecr.us-east-1.amazonaws.com/iris-inference:latest` |
-| `mlflow_tracking_uri` | MLflow server URL | `https://mlflow.example.com` |
+| ~~`mlflow_tracking_uri`~~ | ~~SageMaker managed MLflow server URL~~ | ~~Hardcoded to `mlflow-staging-mlflow`~~ |
 
 ### Optional Variables
 

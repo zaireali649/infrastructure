@@ -20,7 +20,7 @@ This pipeline:
 
 ## Environment Variables
 
-- `MLFLOW_TRACKING_URI` - MLflow server URL
+- `MLFLOW_TRACKING_URI` - SageMaker managed MLflow server URL (mlflow-staging-mlflow)
 - `SM_PROCESSING_OUTPUT_DIR` - SageMaker output directory
 
 ## Output
