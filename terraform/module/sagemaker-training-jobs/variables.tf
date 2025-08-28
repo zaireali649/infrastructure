@@ -190,49 +190,17 @@ variable "enable_mlflow_integration" {
   default     = true
 }
 
-# Custom Lambda Launcher (Optional)
-variable "enable_custom_launcher" {
-  description = "Whether to use a custom Lambda function for launching training jobs"
-  type        = bool
-  default     = false
-}
-
-variable "lambda_zip_path" {
-  description = "Path to the Lambda function ZIP file (required if enable_custom_launcher is true)"
+# Pipeline Configuration
+variable "pipeline_name" {
+  description = "Name for the SageMaker Pipeline (optional, will be auto-generated if not provided)"
   type        = string
   default     = null
 }
 
-variable "lambda_handler" {
-  description = "Lambda function handler"
+variable "pipeline_description" {
+  description = "Description for the SageMaker Pipeline"
   type        = string
-  default     = "index.handler"
-}
-
-variable "lambda_runtime" {
-  description = "Lambda function runtime"
-  type        = string
-  default     = "python3.9"
-  validation {
-    condition     = contains(["python3.8", "python3.9", "python3.10", "python3.11"], var.lambda_runtime)
-    error_message = "Lambda runtime must be a supported Python version."
-  }
-}
-
-variable "lambda_timeout" {
-  description = "Lambda function timeout in seconds"
-  type        = number
-  default     = 300
-  validation {
-    condition     = var.lambda_timeout > 0 && var.lambda_timeout <= 900
-    error_message = "Lambda timeout must be between 1 and 900 seconds."
-  }
-}
-
-variable "lambda_environment_variables" {
-  description = "Environment variables for the Lambda function"
-  type        = map(string)
-  default     = {}
+  default     = "Automated training pipeline for scheduled ML training jobs"
 }
 
 # IAM Configuration

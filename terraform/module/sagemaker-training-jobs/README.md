@@ -1,17 +1,18 @@
 # SageMaker Training Jobs Terraform Module
 
-This Terraform module creates AWS SageMaker training jobs with scheduled execution, MLflow integration for experiment tracking and model registration, and optional custom Lambda launchers for advanced workflows.
+This Terraform module creates AWS SageMaker training jobs with scheduled execution using **SageMaker Pipelines**, MLflow integration for experiment tracking and model registration, without requiring Lambda functions.
 
 ## Features
 
-- **Automated Training Jobs**: Scheduled SageMaker training jobs using EventBridge (cron-based)
+- **Automated Training Jobs**: Scheduled SageMaker training jobs using EventBridge + SageMaker Pipelines
+- **No Lambda Required**: Direct EventBridge to SageMaker Pipeline integration
 - **MLflow Integration**: Automatic experiment tracking and model registration
 - **Flexible Instance Configuration**: Support for various instance types and distributed training
 - **Cost Optimization**: Optional managed spot training support
-- **Custom Launchers**: Optional Lambda function for complex training logic
 - **Network Isolation**: VPC support for secure training environments
 - **Monitoring**: Built-in profiling and debugging configuration
 - **Checkpoint Support**: Automatic checkpointing for fault tolerance
+- **Pipeline Management**: Full SageMaker Pipeline lifecycle management
 
 ## Architecture
 
@@ -21,6 +22,16 @@ This Terraform module creates AWS SageMaker training jobs with scheduled executi
 │  ┌─────────────────────────────────────────────────────┐   │
 │  │           Cron Expression                          │   │
 │  │       (e.g., daily at 2 AM UTC)                   │   │
+│  └─────────────────────────────────────────────────────┘   │
+└─────────────────────────┬───────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────────┐
+│                SageMaker Pipeline                           │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  • Training Step Definition                        │   │
+│  │  • Parameter Management                            │   │
+│  │  • Execution Tracking                              │   │
 │  └─────────────────────────────────────────────────────┘   │
 └─────────────────────────┬───────────────────────────────────┘
                           │
@@ -112,7 +123,7 @@ module "sagemaker_training" {
 }
 ```
 
-### Advanced Example with Custom Launcher
+### Advanced Example with GPU Training
 
 ```hcl
 module "sagemaker_training_advanced" {
@@ -158,18 +169,8 @@ module "sagemaker_training_advanced" {
   output_data_s3_path = "s3://advanced-ml-bucket/models/"
   s3_bucket_arn       = "arn:aws:s3:::advanced-ml-bucket"
 
-  # Advanced scheduling with custom launcher
-  enable_custom_launcher = true
-  lambda_zip_path        = "./lambda/training_launcher.zip"
-  lambda_handler         = "training_launcher.handler"
-  lambda_runtime         = "python3.9"
-  lambda_timeout         = 300
-
-  # Custom Lambda environment variables
-  lambda_environment_variables = {
-    SLACK_WEBHOOK_URL = var.slack_webhook_url
-    MONITORING_ENABLED = "true"
-  }
+  # Pipeline configuration
+  pipeline_description = "Advanced GPU training pipeline for production ML models"
 
   # Cost optimization
   enable_spot_training = true

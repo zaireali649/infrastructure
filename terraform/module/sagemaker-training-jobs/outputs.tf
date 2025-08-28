@@ -35,20 +35,20 @@ output "schedule_expression" {
   value       = var.enable_scheduling ? var.schedule_expression : null
 }
 
-# Lambda Launcher Outputs (when enabled)
-output "lambda_function_arn" {
-  description = "ARN of the Lambda training job launcher function"
-  value       = var.enable_custom_launcher ? aws_lambda_function.training_job_launcher[0].arn : null
+# Pipeline Outputs (when enabled)
+output "pipeline_arn" {
+  description = "ARN of the SageMaker training pipeline"
+  value       = var.enable_scheduling ? aws_sagemaker_pipeline.training_pipeline[0].arn : null
 }
 
-output "lambda_function_name" {
-  description = "Name of the Lambda training job launcher function"
-  value       = var.enable_custom_launcher ? aws_lambda_function.training_job_launcher[0].function_name : null
+output "pipeline_name" {
+  description = "Name of the SageMaker training pipeline"
+  value       = var.enable_scheduling ? aws_sagemaker_pipeline.training_pipeline[0].pipeline_name : null
 }
 
-output "lambda_role_arn" {
-  description = "ARN of the Lambda function IAM role"
-  value       = var.enable_custom_launcher ? aws_iam_role.lambda_role[0].arn : null
+output "pipeline_role_arn" {
+  description = "ARN of the SageMaker pipeline IAM role"
+  value       = var.enable_scheduling ? aws_iam_role.pipeline_role[0].arn : null
 }
 
 # Training Configuration Outputs
@@ -113,7 +113,7 @@ output "training_job_configuration" {
     scheduling_enabled   = var.enable_scheduling
     schedule_expression  = var.schedule_expression
     mlflow_enabled      = var.enable_mlflow_integration && var.mlflow_tracking_server_arn != null
-    custom_launcher_enabled = var.enable_custom_launcher
+    pipeline_enabled    = var.enable_scheduling
     spot_training_enabled = var.enable_spot_training
     network_isolation_enabled = var.enable_network_isolation
   }
