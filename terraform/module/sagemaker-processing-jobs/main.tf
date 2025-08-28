@@ -1,20 +1,20 @@
-# SageMaker Training Jobs Module
-# Supports custom Docker containers with MLflow integration
+# SageMaker Processing Jobs Module
+# Supports custom Docker containers for daily scoring with Kafka output
 
 # Local values
 locals {
   name_prefix = "${var.project_name}-${var.environment}"
   
   common_tags = merge(var.tags, {
-    Module      = "sagemaker-training-jobs"
+    Module      = "sagemaker-processing-jobs"
     Environment = var.environment
     Project     = var.project_name
   })
 }
 
-# IAM Role for SageMaker Training Jobs
-resource "aws_iam_role" "training_role" {
-  name = "${local.name_prefix}-training-role"
+# IAM Role for SageMaker Processing Jobs
+resource "aws_iam_role" "processing_role" {
+  name = "${local.name_prefix}-processing-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -32,16 +32,10 @@ resource "aws_iam_role" "training_role" {
   tags = local.common_tags
 }
 
-# Attach SageMaker execution policy
-resource "aws_iam_role_policy_attachment" "training_execution_policy" {
-  role       = aws_iam_role.training_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSageMakerFullAccess"
-}
-
-# Custom policy for training jobs
-resource "aws_iam_role_policy" "training_policy" {
-  name = "${local.name_prefix}-training-policy"
-  role = aws_iam_role.training_role.id
+# Custom policy for processing jobs
+resource "aws_iam_role_policy" "processing_policy" {
+  name = "${local.name_prefix}-processing-policy"
+  role = aws_iam_role.processing_role.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -79,6 +73,32 @@ resource "aws_iam_role_policy" "training_policy" {
       {
         Effect = "Allow"
         Action = [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret"
+        ]
+        Resource = var.kafka_secret_arn != null ? [var.kafka_secret_arn] : []
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "kafka-cluster:Connect",
+          "kafka-cluster:AlterCluster",
+          "kafka-cluster:DescribeCluster"
+        ]
+        Resource = var.msk_cluster_arn != null ? [var.msk_cluster_arn] : []
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "kafka-cluster:*Topic*",
+          "kafka-cluster:WriteData",
+          "kafka-cluster:ReadData"
+        ]
+        Resource = var.msk_cluster_arn != null ? ["${var.msk_cluster_arn}/*"] : []
+      },
+      {
+        Effect = "Allow"
+        Action = [
           "ec2:CreateNetworkInterface",
           "ec2:CreateNetworkInterfacePermission",
           "ec2:DeleteNetworkInterface",
@@ -95,10 +115,10 @@ resource "aws_iam_role_policy" "training_policy" {
   })
 }
 
-# SageMaker Pipeline for training
-resource "aws_sagemaker_pipeline" "training_pipeline" {
-  pipeline_name         = "${local.name_prefix}-training-pipeline"
-  pipeline_display_name = "${var.project_name} ${var.environment} Training Pipeline"
+# SageMaker Pipeline for processing/scoring
+resource "aws_sagemaker_pipeline" "processing_pipeline" {
+  pipeline_name         = "${local.name_prefix}-processing-pipeline"
+  pipeline_display_name = "${var.project_name} ${var.environment} Daily Scoring Pipeline"
   role_arn             = aws_iam_role.pipeline_role.arn
 
   pipeline_definition = jsonencode({
@@ -108,9 +128,9 @@ resource "aws_sagemaker_pipeline" "training_pipeline" {
     }
     Parameters = [
       {
-        Name         = "TrainingImage"
+        Name         = "ProcessingImage"
         Type         = "String"
-        DefaultValue = var.training_image_uri
+        DefaultValue = var.processing_image_uri
       },
       {
         Name         = "InputDataPath"
@@ -130,48 +150,62 @@ resource "aws_sagemaker_pipeline" "training_pipeline" {
     ]
     Steps = [
       {
-        Name = "TrainingStep"
-        Type = "Training"
+        Name = "ProcessingStep"
+        Type = "Processing"
         Arguments = {
-          TrainingJobName = "${local.name_prefix}-training-{execution-id}"
-          RoleArn        = aws_iam_role.training_role.arn
-          AlgorithmSpecification = {
-            TrainingImage     = { Get = "Parameters.TrainingImage" }
-            TrainingInputMode = "File"
+          ProcessingJobName = "${local.name_prefix}-processing-{execution-id}"
+          RoleArn          = aws_iam_role.processing_role.arn
+          AppSpecification = {
+            ImageUri = { Get = "Parameters.ProcessingImage" }
           }
-          InputDataConfig = [
+          ProcessingInputs = [
             {
-              ChannelName = "training"
-              DataSource = {
-                S3DataSource = {
-                  S3DataType = "S3Prefix"
-                  S3Uri      = { Get = "Parameters.InputDataPath" }
-                }
+              InputName = "input"
+              S3Input = {
+                S3Uri                = { Get = "Parameters.InputDataPath" }
+                LocalPath           = "/opt/ml/processing/input"
+                S3DataType          = "S3Prefix"
+                S3InputMode         = "File"
+                S3DataDistributionType = "FullyReplicated"
+                S3CompressionType   = "None"
               }
-              ContentType = var.input_content_type
-              InputMode   = "File"
             }
           ]
-          OutputDataConfig = {
-            S3OutputPath = { Get = "Parameters.OutputPath" }
-          }
-          ResourceConfig = {
-            InstanceType   = { Get = "Parameters.InstanceType" }
-            InstanceCount  = var.instance_count
-            VolumeSizeInGB = var.volume_size_gb
+          ProcessingOutputConfig = var.enable_s3_audit_output ? {
+            Outputs = [
+              {
+                OutputName = "output"
+                S3Output = {
+                  S3Uri           = { Get = "Parameters.OutputPath" }
+                  LocalPath       = "/opt/ml/processing/output"
+                  S3UploadMode    = "EndOfJob"
+                }
+              }
+            ]
+          } : null
+          ProcessingResources = {
+            ClusterConfig = {
+              InstanceType   = { Get = "Parameters.InstanceType" }
+              InstanceCount  = var.instance_count
+              VolumeSizeInGB = var.volume_size_gb
+            }
           }
           StoppingCondition = {
             MaxRuntimeInSeconds = var.max_runtime_seconds
           }
-          HyperParameters = var.hyperparameters
           Environment = merge(var.environment_variables, {
             MLFLOW_TRACKING_URI = var.mlflow_tracking_uri
-            SM_MODEL_DIR       = "/opt/ml/model"
-            SM_OUTPUT_DATA_DIR = "/opt/ml/output"
+            MLFLOW_MODEL_URI   = var.mlflow_model_uri
+            INPUT_S3_PREFIX    = var.input_data_s3_path
+            KAFKA_BOOTSTRAP    = var.kafka_bootstrap_servers
+            KAFKA_TOPIC        = var.kafka_topic
+            KAFKA_SECRET_ARN   = var.kafka_secret_arn
           })
-          VpcConfig = var.vpc_config != null ? {
-            SecurityGroupIds = var.vpc_config.security_group_ids
-            Subnets         = var.vpc_config.subnet_ids
+          NetworkConfig = var.vpc_config != null ? {
+            VpcConfig = {
+              SecurityGroupIds = var.vpc_config.security_group_ids
+              Subnets         = var.vpc_config.subnet_ids
+            }
           } : null
         }
       }
@@ -183,7 +217,7 @@ resource "aws_sagemaker_pipeline" "training_pipeline" {
 
 # IAM Role for SageMaker Pipeline
 resource "aws_iam_role" "pipeline_role" {
-  name = "${local.name_prefix}-pipeline-role"
+  name = "${local.name_prefix}-processing-pipeline-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -203,7 +237,7 @@ resource "aws_iam_role" "pipeline_role" {
 
 # Pipeline execution policy
 resource "aws_iam_role_policy" "pipeline_policy" {
-  name = "${local.name_prefix}-pipeline-policy"
+  name = "${local.name_prefix}-processing-pipeline-policy"
   role = aws_iam_role.pipeline_role.id
 
   policy = jsonencode({
@@ -212,9 +246,9 @@ resource "aws_iam_role_policy" "pipeline_policy" {
       {
         Effect = "Allow"
         Action = [
-          "sagemaker:CreateTrainingJob",
-          "sagemaker:DescribeTrainingJob",
-          "sagemaker:StopTrainingJob"
+          "sagemaker:CreateProcessingJob",
+          "sagemaker:DescribeProcessingJob",
+          "sagemaker:StopProcessingJob"
         ]
         Resource = "*"
       },
@@ -223,18 +257,18 @@ resource "aws_iam_role_policy" "pipeline_policy" {
         Action = [
           "iam:PassRole"
         ]
-        Resource = aws_iam_role.training_role.arn
+        Resource = aws_iam_role.processing_role.arn
       }
     ]
   })
 }
 
-# EventBridge Rule for scheduling (weekly)
-resource "aws_cloudwatch_event_rule" "training_schedule" {
+# EventBridge Rule for scheduling (daily)
+resource "aws_cloudwatch_event_rule" "processing_schedule" {
   count = var.enable_scheduling ? 1 : 0
 
-  name                = "${local.name_prefix}-training-schedule"
-  description         = "Weekly training pipeline schedule"
+  name                = "${local.name_prefix}-processing-schedule"
+  description         = "Daily processing pipeline schedule"
   schedule_expression = var.schedule_expression
   state              = var.schedule_enabled ? "ENABLED" : "DISABLED"
 
@@ -244,7 +278,7 @@ resource "aws_cloudwatch_event_rule" "training_schedule" {
 # IAM Role for EventBridge
 resource "aws_iam_role" "scheduler_role" {
   count = var.enable_scheduling ? 1 : 0
-  name  = "${local.name_prefix}-scheduler-role"
+  name  = "${local.name_prefix}-processing-scheduler-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -265,7 +299,7 @@ resource "aws_iam_role" "scheduler_role" {
 # Scheduler policy
 resource "aws_iam_role_policy" "scheduler_policy" {
   count = var.enable_scheduling ? 1 : 0
-  name  = "${local.name_prefix}-scheduler-policy"
+  name  = "${local.name_prefix}-processing-scheduler-policy"
   role  = aws_iam_role.scheduler_role[0].id
 
   policy = jsonencode({
@@ -276,24 +310,24 @@ resource "aws_iam_role_policy" "scheduler_policy" {
         Action = [
           "sagemaker:StartPipelineExecution"
         ]
-        Resource = aws_sagemaker_pipeline.training_pipeline.arn
+        Resource = aws_sagemaker_pipeline.processing_pipeline.arn
       }
     ]
   })
 }
 
 # EventBridge Target
-resource "aws_cloudwatch_event_target" "training_target" {
+resource "aws_cloudwatch_event_target" "processing_target" {
   count = var.enable_scheduling ? 1 : 0
 
-  rule      = aws_cloudwatch_event_rule.training_schedule[0].name
-  target_id = "SageMakerTrainingPipelineTarget"
-  arn       = aws_sagemaker_pipeline.training_pipeline.arn
+  rule      = aws_cloudwatch_event_rule.processing_schedule[0].name
+  target_id = "SageMakerProcessingPipelineTarget"
+  arn       = aws_sagemaker_pipeline.processing_pipeline.arn
   role_arn  = aws_iam_role.scheduler_role[0].arn
 
   sagemaker_pipeline_target {
     pipeline_parameter_list = {
-      TrainingImage   = var.training_image_uri
+      ProcessingImage = var.processing_image_uri
       InputDataPath   = var.input_data_s3_path
       OutputPath      = var.output_data_s3_path
       InstanceType    = var.instance_type
