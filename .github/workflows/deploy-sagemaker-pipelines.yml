@@ -1,83 +1,17 @@
-name: SageMaker Pipelines Pull Request
+name: SageMaker Pipelines Deploy
 
 on:
-  pull_request:
-    paths:
-      - 'sagemaker-pipelines/**'
-      - '.github/workflows/deploy-sagemaker-pipelines.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
   pull-requests: write
   id-token: write
 
-env:
-  AWS_REGION: us-east-1
-
 jobs:
-  # Build and push Docker images
-  build-images:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        service: [training, inference]
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v2
-        with:
-          version: "0.4.0"
-
-      - name: Generate uv.lock file
-        working-directory: sagemaker-pipelines/src/${{ matrix.service }}
-        run: uv lock --upgrade
-
-      - name: Build and push Docker image
-        working-directory: sagemaker-pipelines/src/${{ matrix.service }}
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG: ${{ github.sha }}
-        run: |
-          REPO_NAME="ml-platform-staging-${{ matrix.service }}"
-          FULL_IMAGE_NAME="${ECR_REGISTRY}/${REPO_NAME}:${IMAGE_TAG}"
-          LATEST_IMAGE_NAME="${ECR_REGISTRY}/${REPO_NAME}:latest"
-          
-          # Verify ECR repository exists
-          if ! aws ecr describe-repositories --repository-names $REPO_NAME --region $AWS_REGION >/dev/null 2>&1; then
-            echo "❌ ECR repository '$REPO_NAME' does not exist!"
-            echo "Please create the repository first: aws ecr create-repository --repository-name $REPO_NAME --region $AWS_REGION"
-            exit 1
-          fi
-
-          # Build and push image
-          docker build -t $FULL_IMAGE_NAME -t $LATEST_IMAGE_NAME .
-          docker push $FULL_IMAGE_NAME
-          docker push $LATEST_IMAGE_NAME
-          
-          echo "Built and pushed: $FULL_IMAGE_NAME"
-
-  # Plan SageMaker Pipelines infrastructure
   plan-sagemaker-pipelines:
-    strategy:
-      fail-fast: false
     uses: ./.github/workflows/terraform-plan.yml
     secrets: inherit
-    needs: build-images
     with:
       environment: "sagemaker-pipelines-staging"
       terraform-environment: staging
@@ -86,10 +20,7 @@ jobs:
       project: ml
       aws-role-name: mlops-github
 
-  # Apply SageMaker Pipelines infrastructure
   apply-sagemaker-pipelines:
-    strategy:
-        fail-fast: false
     uses: ./.github/workflows/terraform-deploy.yml
     secrets: inherit
     needs: plan-sagemaker-pipelines

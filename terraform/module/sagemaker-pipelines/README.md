@@ -86,7 +86,7 @@ module "sagemaker_pipelines" {
 
   processing_environment_variables = {
     MLFLOW_TRACKING_URI = "https://mlflow.example.com"
-    MLFLOW_MODEL_URI   = "models:/poem-model/Production"
+    MLFLOW_MODEL_URI   = "models:/model/Production"
     KAFKA_TOPIC        = "predictions"  # Used in Python code
   }
 
@@ -166,7 +166,7 @@ module "sagemaker_pipelines" {
   # Processing configuration
   processing_environment_variables = {
     MLFLOW_TRACKING_URI = data.aws_sagemaker_mlflow_tracking_server.existing.tracking_server_url
-    MLFLOW_MODEL_URI   = "models:/poem-model/Production"
+    MLFLOW_MODEL_URI   = "models:/model/Production"
     KAFKA_TOPIC        = "production-predictions"
   }
 
