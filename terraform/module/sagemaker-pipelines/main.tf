@@ -445,8 +445,9 @@ resource "aws_cloudwatch_event_target" "training_target" {
   role_arn  = aws_iam_role.scheduler_role[0].arn
 
   sagemaker_pipeline_target {
-    pipeline_parameter_list = {
-      TrainingImage = var.training_image_uri
+    pipeline_parameter_list {
+      name  = "TrainingImage"
+      value = var.training_image_uri
     }
   }
 }
@@ -461,8 +462,9 @@ resource "aws_cloudwatch_event_target" "processing_target" {
   role_arn  = aws_iam_role.scheduler_role[0].arn
 
   sagemaker_pipeline_target {
-    pipeline_parameter_list = {
-      ProcessingImage = var.inference_image_uri
+    pipeline_parameter_list {
+      name  = "ProcessingImage"
+      value = var.inference_image_uri
     }
   }
 }
