@@ -19,6 +19,7 @@ jobs:
   build-images:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         service: [training, inference]
     
@@ -70,6 +71,8 @@ jobs:
 
   # Plan SageMaker Pipelines infrastructure
   plan-sagemaker-pipelines:
+    strategy:
+      fail-fast: false
     uses: ./.github/workflows/terraform-plan.yml
     secrets: inherit
     needs: build-images
@@ -83,6 +86,8 @@ jobs:
 
   # Apply SageMaker Pipelines infrastructure
   apply-sagemaker-pipelines:
+    strategy:
+        fail-fast: false
     uses: ./.github/workflows/terraform-deploy.yml
     secrets: inherit
     needs: plan-sagemaker-pipelines
