@@ -4,8 +4,6 @@ on:
   pull_request:
     paths:
       - 'sagemaker-pipelines/**'
-      - 'terraform/module/sagemaker-training-jobs/**'
-      - 'terraform/module/sagemaker-processing-jobs/**'
       - '.github/workflows/deploy-sagemaker-pipelines.yml'
 
 permissions:
