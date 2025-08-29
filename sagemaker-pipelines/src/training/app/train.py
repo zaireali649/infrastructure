@@ -45,8 +45,8 @@ def train_model(X, y):
     """Train RandomForest model with scaling"""
     logger.info("Training RandomForest model")
     
-    # Split data
-    X_train, X_test, y_train, y_test = train_test_split(
+        # Split data
+        X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42, stratify=y
     )
     
@@ -56,7 +56,7 @@ def train_model(X, y):
     X_test_scaled = scaler.transform(X_test)
     
     # Train model
-    model = RandomForestClassifier(
+        model = RandomForestClassifier(
         n_estimators=100,
         random_state=42,
         max_depth=5
@@ -65,8 +65,8 @@ def train_model(X, y):
     
     # Evaluate
     y_pred = model.predict(X_test_scaled)
-    accuracy = accuracy_score(y_test, y_pred)
-    
+        accuracy = accuracy_score(y_test, y_pred)
+        
     logger.info(f"Model accuracy: {accuracy:.4f}")
     logger.info(f"Classification Report:\n{classification_report(y_test, y_pred)}")
     
@@ -85,15 +85,15 @@ def save_to_mlflow(model, scaler, accuracy, class_names):
     logger.info("Saving model to MLflow")
     
     with mlflow.start_run():
-        # Log parameters
-        mlflow.log_param("model_type", "RandomForestClassifier")
+            # Log parameters
+            mlflow.log_param("model_type", "RandomForestClassifier")
         mlflow.log_param("n_estimators", 100)
         mlflow.log_param("max_depth", 5)
         mlflow.log_param("dataset", "iris")
-        mlflow.log_param("training_date", datetime.now().isoformat())
-        
-        # Log metrics
-        mlflow.log_metric("accuracy", accuracy)
+            mlflow.log_param("training_date", datetime.now().isoformat())
+            
+            # Log metrics
+            mlflow.log_metric("accuracy", accuracy)
         
         # Create a model with preprocessing
         class IrisModel:
