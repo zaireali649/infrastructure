@@ -271,10 +271,12 @@ resource "aws_sagemaker_pipeline" "training_pipeline" {
               }
             ]
           }
-          ResourceConfig = {
-            InstanceType   = var.training_instance_type
-            InstanceCount  = var.training_instance_count
-            VolumeSizeInGB = var.training_volume_size
+          ProcessingResources = {
+            ClusterConfig = {
+              InstanceType   = var.training_instance_type
+              InstanceCount  = var.training_instance_count
+              VolumeSizeInGB = var.training_volume_size
+            }
           }
           StoppingCondition = {
             MaxRuntimeInSeconds = var.training_max_runtime_seconds
