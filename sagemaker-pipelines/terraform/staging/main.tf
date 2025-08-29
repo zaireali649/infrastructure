@@ -138,8 +138,8 @@ module "sagemaker_pipelines" {
   }
 
   # Display names
-  training_pipeline_display_name   = "Iris Training Pipeline"
-  processing_pipeline_display_name = "Iris Inference Pipeline"
+  training_pipeline_display_name   = "Iris-Training-Pipeline"
+  processing_pipeline_display_name = "Iris-Inference-Pipeline"
 
   # Scheduling - Weekly training (Sundays at 2 AM) and Daily inference (6 AM)
   enable_training_schedule     = true
