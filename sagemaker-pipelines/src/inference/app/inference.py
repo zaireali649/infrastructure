@@ -20,7 +20,9 @@ logger = logging.getLogger(__name__)
 
 # MLflow settings
 MLFLOW_TRACKING_URI = os.environ.get("MLFLOW_TRACKING_URI")
-MLFLOW_TRACKING_SERVER_NAME = os.environ.get("MLFLOW_TRACKING_SERVER_NAME", "mlflow-staging-mlflow")
+MLFLOW_TRACKING_SERVER_NAME = os.environ.get(
+    "MLFLOW_TRACKING_SERVER_NAME", "mlflow-staging-mlflow"
+)
 MODEL_NAME = "iris-model"
 OUTPUT_DIR = os.environ.get("SM_PROCESSING_OUTPUT_DIR", "/opt/ml/processing/output")
 
@@ -29,20 +31,20 @@ def discover_mlflow_tracking_server():
     """Get MLflow tracking server ARN by name for SageMaker authentication"""
     try:
         # Use boto3 to get the specific MLflow tracking server
-        region = os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')
+        region = os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
         sagemaker_client = boto3.client("sagemaker", region_name=region)
 
         logger.info(f"Getting MLflow tracking server: {MLFLOW_TRACKING_SERVER_NAME}")
-        
+
         # Get detailed information for the specific tracking server
         detail_response = sagemaker_client.describe_mlflow_tracking_server(
             TrackingServerName=MLFLOW_TRACKING_SERVER_NAME
         )
-        
+
         # For SageMaker MLflow, use the ARN as tracking URI (with sagemaker-mlflow plugin)
         tracking_arn = detail_response.get("TrackingServerArn")
         tracking_url = detail_response.get("TrackingServerUrl")
-        
+
         if tracking_arn:
             logger.info(f"Retrieved MLflow tracking server URL: {tracking_url}")
             logger.info(f"Retrieved MLflow tracking server ARN: {tracking_arn}")
@@ -50,9 +52,11 @@ def discover_mlflow_tracking_server():
         else:
             logger.warning(f"No TrackingServerArn in response: {detail_response}")
             return None
-        
+
     except Exception as e:
-        logger.warning(f"Failed to get MLflow tracking server '{MLFLOW_TRACKING_SERVER_NAME}': {e}")
+        logger.warning(
+            f"Failed to get MLflow tracking server '{MLFLOW_TRACKING_SERVER_NAME}': {e}"
+        )
         return None
 
 
@@ -69,9 +73,11 @@ def setup_mlflow():
         # The sagemaker-mlflow plugin handles authentication automatically
         mlflow.set_tracking_uri(tracking_uri)
         logger.info(f"MLflow tracking URI set to: {tracking_uri}")
-        
+
         if tracking_uri.startswith("arn:aws:sagemaker"):
-            logger.info("Using SageMaker MLflow tracking server with ARN-based authentication")
+            logger.info(
+                "Using SageMaker MLflow tracking server with ARN-based authentication"
+            )
         else:
             logger.info("Using standard MLflow tracking server")
         return True
@@ -135,11 +141,11 @@ def sanitize_metric_name(name):
     """Sanitize metric names for MLflow compatibility"""
     # MLflow allows: alphanumerics, underscores, dashes, periods, spaces, colons, slashes
     # Remove parentheses and other invalid chars, replace with underscores
-    sanitized = re.sub(r'[^a-zA-Z0-9_\-\. :/]', '_', str(name))
+    sanitized = re.sub(r"[^a-zA-Z0-9_\-\. :/]", "_", str(name))
     # Remove multiple consecutive underscores
-    sanitized = re.sub(r'_+', '_', sanitized)
+    sanitized = re.sub(r"_+", "_", sanitized)
     # Remove leading/trailing underscores
-    sanitized = sanitized.strip('_')
+    sanitized = sanitized.strip("_")
     return sanitized
 
 
@@ -155,39 +161,42 @@ def log_inference_to_mlflow(data, predictions, predicted_classes, model_version=
 
     # Get prediction summary
     prediction_counts = pd.Series(predicted_classes).value_counts()
-    
+
     try:
         # Set experiment for inference logging
         mlflow.set_experiment("iris-model-inference")
-        
+
         # Create meaningful run name for inference
         inference_date = datetime.now()
         run_name = f"iris-inference-{inference_date.strftime('%Y-%m-%d_%H-%M-%S')}-{len(data)}samples-{model_version}"
-        
+
         with mlflow.start_run(run_name=run_name):
             # Log run metadata
             mlflow.log_param("model_name", MODEL_NAME)
             mlflow.log_param("model_version", model_version or "latest")
             mlflow.log_param("inference_timestamp", datetime.now().isoformat())
             mlflow.log_param("num_samples", len(data))
-            
+
             # Log prediction metrics
             mlflow.log_metric("total_predictions", len(predictions))
             for class_name, count in prediction_counts.items():
                 mlflow.log_metric(f"predictions_{class_name}", count)
-                mlflow.log_metric(f"percentage_{class_name}", (count / len(predictions)) * 100)
-            
+                mlflow.log_metric(
+                    f"percentage_{class_name}", (count / len(predictions)) * 100
+                )
+
             # Log input data statistics as metrics
             for column in data.columns:
                 sanitized_column = sanitize_metric_name(column)
                 mlflow.log_metric(f"input_{sanitized_column}_mean", data[column].mean())
                 mlflow.log_metric(f"input_{sanitized_column}_std", data[column].std())
-            
+
             # Log the results as an artifact (optional CSV backup)
             try:
                 os.makedirs(OUTPUT_DIR, mode=0o755, exist_ok=True)
                 output_file = os.path.join(
-                    OUTPUT_DIR, f"predictions_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+                    OUTPUT_DIR,
+                    f"predictions_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
                 )
                 results.to_csv(output_file, index=False)
                 mlflow.log_artifact(output_file, "predictions")
@@ -195,10 +204,10 @@ def log_inference_to_mlflow(data, predictions, predicted_classes, model_version=
             except PermissionError as e:
                 logger.warning(f"Could not save CSV artifact due to permissions: {e}")
                 # Continue without CSV - MLflow logging is the primary goal
-            
+
             logger.info("Inference results logged to MLflow successfully")
             logger.info(f"Prediction summary:\n{prediction_counts}")
-            
+
     except Exception as e:
         logger.error(f"Failed to log inference results to MLflow: {e}")
         # Fallback: try to save basic results info
@@ -213,7 +222,7 @@ def main():
     try:
         # Setup MLflow
         mlflow_available = setup_mlflow()
-        
+
         if not mlflow_available:
             logger.error("MLflow not available - cannot load model")
             raise RuntimeError("MLflow tracking server not available")
