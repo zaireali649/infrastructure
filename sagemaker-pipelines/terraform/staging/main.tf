@@ -94,7 +94,7 @@ module "sagemaker_pipelines" {
 
   # S3 configuration
   s3_bucket_arn             = data.aws_s3_bucket.ml_bucket.arn
-  input_data_s3_path        = "s3://${local.s3_bucket_name}/iris/input/"
+  input_data_s3_path        = ""  # Not used - dataset loaded in code
   model_output_s3_path      = "s3://${local.s3_bucket_name}/iris/models/"
   inference_input_s3_path   = "s3://${local.s3_bucket_name}/iris/inference-input/"
   inference_output_s3_path  = "s3://${local.s3_bucket_name}/iris/inference-output/"
