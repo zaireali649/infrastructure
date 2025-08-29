@@ -114,11 +114,15 @@ module "sagemaker_pipelines" {
   training_max_runtime_seconds  = 1800  # 30 minutes
   training_input_content_type   = "text/csv"  # Since Iris will be CSV format
 
+  # MLflow Configuration
+  mlflow_tracking_server_name = local.mlflow_tracking_server_name
+
   # Training environment variables for MLflow
   training_environment_variables = {
-    MLFLOW_TRACKING_URI = local.mlflow_tracking_uri
-    ENVIRONMENT         = local.environment
-    MODEL_NAME          = "iris-model"
+    MLFLOW_TRACKING_URI         = local.mlflow_tracking_uri
+    MLFLOW_TRACKING_SERVER_NAME = local.mlflow_tracking_server_name
+    ENVIRONMENT                 = local.environment
+    MODEL_NAME                  = "iris-model"
   }
 
   # Training hyperparameters
