@@ -337,6 +337,7 @@ resource "aws_sagemaker_pipeline" "training_pipeline" {
             SM_OUTPUT_DATA_DIR          = "/opt/ml/processing/output"
             AWS_DEFAULT_REGION          = data.aws_region.current.name
             MLFLOW_TRACKING_SERVER_NAME = var.mlflow_tracking_server_name
+            GIT_PYTHON_REFRESH          = "quiet"  # Silence MLflow Git warnings
           })
         }, length(var.subnet_ids) > 0 ? {
           NetworkConfig = {
@@ -407,6 +408,7 @@ resource "aws_sagemaker_pipeline" "processing_pipeline" {
           Environment = merge(var.processing_environment_variables, {
             AWS_DEFAULT_REGION          = data.aws_region.current.name
             MLFLOW_TRACKING_SERVER_NAME = var.mlflow_tracking_server_name
+            GIT_PYTHON_REFRESH          = "quiet"  # Silence MLflow Git warnings
           })
         }, length(var.subnet_ids) > 0 ? {
           NetworkConfig = {
