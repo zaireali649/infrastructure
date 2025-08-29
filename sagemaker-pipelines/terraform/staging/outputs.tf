@@ -72,8 +72,8 @@ output "inference_image_uri" {
 
 # MLflow Configuration
 output "mlflow_tracking_uri" {
-  description = "MLflow tracking server URI"
-  value       = local.mlflow_tracking_uri
+  description = "MLflow tracking server URI (dynamically retrieved)"
+  value       = data.aws_sagemaker_mlflow_tracking_server.mlflow_server.tracking_server_url
 }
 
 # Quick Start Commands
