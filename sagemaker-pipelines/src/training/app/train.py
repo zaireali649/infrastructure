@@ -14,11 +14,9 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, classification_report
 import mlflow
 import mlflow.sklearn
-from mlflow.models.signature import infer_signature
 from mlflow.types.schema import Schema, ColSpec
 import joblib
 import boto3
-import numpy as np
 from datetime import datetime
 
 # Setup logging
@@ -31,7 +29,9 @@ OUTPUT_DIR = os.environ.get("SM_OUTPUT_DATA_DIR", "/opt/ml/output")
 
 # MLflow settings
 MLFLOW_TRACKING_URI = os.environ.get("MLFLOW_TRACKING_URI")
-MLFLOW_TRACKING_SERVER_NAME = os.environ.get("MLFLOW_TRACKING_SERVER_NAME", "mlflow-staging-mlflow")
+MLFLOW_TRACKING_SERVER_NAME = os.environ.get(
+    "MLFLOW_TRACKING_SERVER_NAME", "mlflow-staging-mlflow"
+)
 MODEL_NAME = "iris-model"
 
 
@@ -79,20 +79,20 @@ def discover_mlflow_tracking_server():
     """Get MLflow tracking server ARN by name for SageMaker authentication"""
     try:
         # Use boto3 to get the specific MLflow tracking server
-        region = os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')
+        region = os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
         sagemaker_client = boto3.client("sagemaker", region_name=region)
 
         logger.info(f"Getting MLflow tracking server: {MLFLOW_TRACKING_SERVER_NAME}")
-        
+
         # Get detailed information for the specific tracking server
         detail_response = sagemaker_client.describe_mlflow_tracking_server(
             TrackingServerName=MLFLOW_TRACKING_SERVER_NAME
         )
-        
+
         # For SageMaker MLflow, use the ARN as tracking URI (with sagemaker-mlflow plugin)
         tracking_arn = detail_response.get("TrackingServerArn")
         tracking_url = detail_response.get("TrackingServerUrl")
-        
+
         if tracking_arn:
             logger.info(f"Retrieved MLflow tracking server URL: {tracking_url}")
             logger.info(f"Retrieved MLflow tracking server ARN: {tracking_arn}")
@@ -100,9 +100,11 @@ def discover_mlflow_tracking_server():
         else:
             logger.warning(f"No TrackingServerArn in response: {detail_response}")
             return None
-        
+
     except Exception as e:
-        logger.warning(f"Failed to get MLflow tracking server '{MLFLOW_TRACKING_SERVER_NAME}': {e}")
+        logger.warning(
+            f"Failed to get MLflow tracking server '{MLFLOW_TRACKING_SERVER_NAME}': {e}"
+        )
         return None
 
 
@@ -119,12 +121,14 @@ def setup_mlflow():
         # The sagemaker-mlflow plugin handles authentication automatically
         mlflow.set_tracking_uri(tracking_uri)
         logger.info(f"MLflow tracking URI set to: {tracking_uri}")
-        
+
         if tracking_uri.startswith("arn:aws:sagemaker"):
-            logger.info("Using SageMaker MLflow tracking server with ARN-based authentication")
+            logger.info(
+                "Using SageMaker MLflow tracking server with ARN-based authentication"
+            )
         else:
             logger.info("Using standard MLflow tracking server")
-        
+
     else:
         logger.warning("No MLflow tracking URI available - running without MLflow")
         return False
@@ -146,7 +150,7 @@ def save_to_mlflow(model, scaler, accuracy, class_names):
     # Create meaningful run name
     training_date = datetime.now()
     run_name = f"iris-training-{training_date.strftime('%Y-%m-%d_%H-%M-%S')}-acc-{accuracy:.3f}"
-    
+
     with mlflow.start_run(run_name=run_name):
         # Log parameters
         mlflow.log_param("model_type", "RandomForestClassifier")
@@ -154,7 +158,7 @@ def save_to_mlflow(model, scaler, accuracy, class_names):
         mlflow.log_param("max_depth", 5)
         mlflow.log_param("dataset", "iris")
         mlflow.log_param("training_date", training_date.isoformat())
-        
+
         # Log metrics
         mlflow.log_metric("accuracy", accuracy)
 
@@ -184,7 +188,7 @@ def save_to_mlflow(model, scaler, accuracy, class_names):
         - Classes: Setosa, Versicolor, Virginica
         - Accuracy: {accuracy:.4f}
         - Training Date: {training_date}
-        - Instance Type: {os.environ.get('TRAINING_INSTANCE_TYPE', 'ml.m5.large')}
+        - Instance Type: {os.environ.get("TRAINING_INSTANCE_TYPE", "ml.m5.large")}
         
         Preprocessing:
         - StandardScaler applied to all features
@@ -199,53 +203,57 @@ def save_to_mlflow(model, scaler, accuracy, class_names):
 
         # Create input/output schema for the model
         # Define input schema (Iris features)
-        input_schema = Schema([
-            ColSpec("double", "sepal length (cm)"),
-            ColSpec("double", "sepal width (cm)"),  
-            ColSpec("double", "petal length (cm)"),
-            ColSpec("double", "petal width (cm)")
-        ])
-        
+        input_schema = Schema(
+            [
+                ColSpec("double", "sepal length (cm)"),
+                ColSpec("double", "sepal width (cm)"),
+                ColSpec("double", "petal length (cm)"),
+                ColSpec("double", "petal width (cm)"),
+            ]
+        )
+
         # Define output schema (predictions)
         output_schema = Schema([ColSpec("long", "prediction")])
-        
+
         # Create signature with input and output schemas
         signature = mlflow.models.ModelSignature(
-            inputs=input_schema,
-            outputs=output_schema
+            inputs=input_schema, outputs=output_schema
         )
-        
+
         # Log model with schema signature
-        model_info = mlflow.sklearn.log_model(
-            wrapped_model, 
-            "model", 
+        mlflow.sklearn.log_model(
+            wrapped_model,
+            "model",
             registered_model_name=MODEL_NAME,
-            signature=signature
+            signature=signature,
         )
 
         # Update descriptions using MLflow client after model is logged
         try:
             client = mlflow.tracking.MlflowClient()
-            
+
             # Get the latest model version that was just created
             latest_versions = client.get_latest_versions(MODEL_NAME)
             if latest_versions:
                 latest_version = latest_versions[0].version
-                
+
                 # Update the version description
                 client.update_model_version(
                     name=MODEL_NAME,
                     version=latest_version,
-                    description=version_description
+                    description=version_description,
                 )
                 logger.info(f"Updated version {latest_version} description")
-            
+
             # Check if model-level description needs to be set (only for first version)
             try:
                 model_details = client.get_registered_model(MODEL_NAME)
-                
+
                 # If model description is empty, add a comprehensive description
-                if not model_details.description or model_details.description.strip() == "":
+                if (
+                    not model_details.description
+                    or model_details.description.strip() == ""
+                ):
                     model_description = """
                     Iris Flower Classification Model
                     
@@ -274,20 +282,21 @@ def save_to_mlflow(model, scaler, accuracy, class_names):
                     
                     Maintained by: ML Engineering Team
                     """.strip()
-                    
+
                     client.update_registered_model(
-                        name=MODEL_NAME,
-                        description=model_description
+                        name=MODEL_NAME, description=model_description
                     )
                     logger.info("Updated model-level description")
-                    
+
             except Exception as e:
                 logger.warning(f"Could not update model-level description: {e}")
-            
+
         except Exception as e:
             logger.warning(f"Could not update model descriptions: {e}")
 
-        logger.info(f"Model version saved to MLflow as '{MODEL_NAME}' with descriptions")
+        logger.info(
+            f"Model version saved to MLflow as '{MODEL_NAME}' with descriptions"
+        )
 
 
 def save_local_artifacts(model, scaler):
@@ -297,11 +306,11 @@ def save_local_artifacts(model, scaler):
     try:
         # Ensure directory exists with proper permissions
         os.makedirs(MODEL_DIR, mode=0o755, exist_ok=True)
-        
+
         # Save model and scaler
         joblib.dump(model, os.path.join(MODEL_DIR, "model.joblib"))
         joblib.dump(scaler, os.path.join(MODEL_DIR, "scaler.joblib"))
-        
+
         logger.info("Local artifacts saved")
     except PermissionError as e:
         logger.warning(f"Permission denied saving to {MODEL_DIR}: {e}")
@@ -328,7 +337,7 @@ def main():
 
         # Load data
         X, y, class_names = load_iris_data()
-        
+
         # Train model
         model, scaler, accuracy = train_model(X, y)
 
@@ -342,7 +351,7 @@ def main():
         save_local_artifacts(model, scaler)
 
         logger.info("Training completed successfully!")
-        
+
     except Exception as e:
         logger.error(f"Training failed: {e}")
         raise
