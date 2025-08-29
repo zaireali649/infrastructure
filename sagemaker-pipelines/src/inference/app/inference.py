@@ -160,7 +160,11 @@ def log_inference_to_mlflow(data, predictions, predicted_classes, model_version=
         # Set experiment for inference logging
         mlflow.set_experiment("iris-model-inference")
         
-        with mlflow.start_run():
+        # Create meaningful run name for inference
+        inference_date = datetime.now()
+        run_name = f"iris-inference-{inference_date.strftime('%Y-%m-%d_%H-%M-%S')}-{len(data)}samples-{model_version}"
+        
+        with mlflow.start_run(run_name=run_name):
             # Log run metadata
             mlflow.log_param("model_name", MODEL_NAME)
             mlflow.log_param("model_version", model_version or "latest")
