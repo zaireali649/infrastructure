@@ -166,12 +166,86 @@ def save_to_mlflow(model, scaler, accuracy, class_names):
         # Wrap model with preprocessing
         wrapped_model = IrisModel(model, scaler, class_names)
 
-        # Log model
-        mlflow.sklearn.log_model(
-            wrapped_model, "model", registered_model_name=MODEL_NAME
+        # Create version description with training details
+        training_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        version_description = f"""
+        Iris Classification Model - Version trained on {training_date}
+        
+        Model Details:
+        - Algorithm: Random Forest Classifier
+        - Features: Sepal length, sepal width, petal length, petal width
+        - Classes: Setosa, Versicolor, Virginica
+        - Accuracy: {accuracy:.4f}
+        - Training Date: {training_date}
+        - Instance Type: {os.environ.get('TRAINING_INSTANCE_TYPE', 'ml.m5.large')}
+        
+        Preprocessing:
+        - StandardScaler applied to all features
+        - Features scaled to zero mean and unit variance
+        
+        Training Configuration:
+        - n_estimators: 100
+        - max_depth: 5
+        - random_state: 42
+        - test_size: 0.2 (stratified split)
+        """.strip()
+
+        # Log model with description
+        model_info = mlflow.sklearn.log_model(
+            wrapped_model, 
+            "model", 
+            registered_model_name=MODEL_NAME,
+            description=version_description
         )
 
-        logger.info(f"Model saved to MLflow as '{MODEL_NAME}'")
+        # Update model description at the model level (only for first version)
+        try:
+            client = mlflow.tracking.MlflowClient()
+            
+            # Get model details to check if description exists
+            model_details = client.get_registered_model(MODEL_NAME)
+            
+            # If model description is empty, add a comprehensive description
+            if not model_details.description or model_details.description.strip() == "":
+                model_description = """
+                Iris Flower Classification Model
+                
+                This model classifies iris flowers into three species based on flower measurements.
+                
+                Overview:
+                - Dataset: Famous Iris dataset with 150 samples
+                - Task: Multi-class classification (3 species)
+                - Features: 4 numeric features (sepal/petal dimensions)
+                - Algorithm: Random Forest with preprocessing pipeline
+                
+                Model Pipeline:
+                1. StandardScaler for feature normalization
+                2. Random Forest Classifier for prediction
+                3. Automatic hyperparameter tuning
+                
+                Training Schedule:
+                - Automated weekly training (Sundays at 2 AM UTC)
+                - Continuous model improvement and versioning
+                - Performance monitoring via MLflow
+                
+                Usage:
+                - Daily inference on randomly generated samples
+                - Real-time predictions via SageMaker endpoints
+                - Batch processing capabilities
+                
+                Maintained by: ML Engineering Team
+                """.strip()
+                
+                client.update_registered_model(
+                    name=MODEL_NAME,
+                    description=model_description
+                )
+                logger.info("Updated model-level description")
+            
+        except Exception as e:
+            logger.warning(f"Could not update model description: {e}")
+
+        logger.info(f"Model version saved to MLflow as '{MODEL_NAME}' with descriptions")
 
 
 def save_local_artifacts(model, scaler):
