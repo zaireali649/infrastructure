@@ -201,7 +201,7 @@ s3://mlflow-staging-mlflow-artifacts-zali-staging/  # Shared with MLflow
     ├── models/
     └── runs/
 
-Note: No iris/input/ directory needed - training uses built-in Iris dataset
+Note: No external data required - training uses built-in Iris dataset
 ```
 
 ### Model Flow
