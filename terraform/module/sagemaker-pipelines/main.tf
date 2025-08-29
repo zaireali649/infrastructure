@@ -258,21 +258,8 @@ resource "aws_sagemaker_pipeline" "training_pipeline" {
           RoleArn        = aws_iam_role.training_role[0].arn
           AlgorithmSpecification = {
             TrainingImage     = { Get = "Parameters.TrainingImage" }
-            TrainingInputMode = "File"
+            TrainingInputMode = "NoInput"
           }
-          InputDataConfig = [
-            {
-              ChannelName = "training"
-              DataSource = {
-                S3DataSource = {
-                  S3DataType = "S3Prefix"
-                  S3Uri      = var.input_data_s3_path
-                }
-              }
-              ContentType = var.training_input_content_type
-              InputMode   = "File"
-            }
-          ]
           OutputDataConfig = {
             S3OutputPath = var.model_output_s3_path
           }
