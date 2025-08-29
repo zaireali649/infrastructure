@@ -191,12 +191,16 @@ aws sagemaker describe-pipeline-execution \
 
 ### S3 Structure
 ```
-s3://your-ml-bucket-staging/
-├── iris/
-│   ├── input/           # Training data (optional - using built-in dataset)
-│   ├── models/          # Model artifacts
-│   ├── inference-input/ # Inference input data (generated)
-│   └── inference-output/# Prediction results
+s3://mlflow-staging-mlflow-artifacts-zali-staging/  # Shared with MLflow
+├── iris/                    # SageMaker pipeline data
+│   ├── input/              # Training data (optional - using built-in dataset)
+│   ├── models/             # Model artifacts from SageMaker
+│   ├── inference-input/    # Inference input data (generated)
+│   └── inference-output/   # Daily prediction results
+└── mlflow-artifacts/       # MLflow experiment artifacts (managed by MLflow)
+    ├── experiments/
+    ├── models/
+    └── runs/
 ```
 
 ### Model Flow
