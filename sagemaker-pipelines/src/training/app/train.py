@@ -73,7 +73,7 @@ def train_model(X, y):
 
 
 def discover_mlflow_tracking_server():
-    """Get MLflow tracking server URL by name"""
+    """Get MLflow tracking server ARN by name for SageMaker authentication"""
     try:
         # Use boto3 to get the specific MLflow tracking server
         region = os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')
@@ -86,16 +86,16 @@ def discover_mlflow_tracking_server():
             TrackingServerName=MLFLOW_TRACKING_SERVER_NAME
         )
         
-        # For SageMaker MLflow, use the URL for tracking but log both for reference
+        # For SageMaker MLflow, use the ARN as tracking URI (with sagemaker-mlflow plugin)
         tracking_arn = detail_response.get("TrackingServerArn")
         tracking_url = detail_response.get("TrackingServerUrl")
         
-        if tracking_url:
+        if tracking_arn:
             logger.info(f"Retrieved MLflow tracking server URL: {tracking_url}")
             logger.info(f"Retrieved MLflow tracking server ARN: {tracking_arn}")
-            return tracking_url
+            return tracking_arn
         else:
-            logger.warning(f"No TrackingServerUrl in response: {detail_response}")
+            logger.warning(f"No TrackingServerArn in response: {detail_response}")
             return None
         
     except Exception as e:
@@ -104,57 +104,36 @@ def discover_mlflow_tracking_server():
 
 
 def setup_mlflow():
-    """Setup MLflow tracking"""
+    """Setup MLflow tracking with SageMaker MLflow server"""
     tracking_uri = MLFLOW_TRACKING_URI
 
-    # If no URI provided via environment, try to discover it
+    # If no URI provided via environment, try to discover the ARN
     if not tracking_uri:
         tracking_uri = discover_mlflow_tracking_server()
 
     if tracking_uri:
-        # Set the tracking URI (should be HTTP/HTTPS URL for SageMaker MLflow)
+        # For SageMaker MLflow, use the ARN as tracking URI
+        # The sagemaker-mlflow plugin handles authentication automatically
         mlflow.set_tracking_uri(tracking_uri)
-        logger.info(f"MLflow tracking URI: {tracking_uri}")
+        logger.info(f"MLflow tracking URI set to: {tracking_uri}")
         
-        # For SageMaker MLflow, we also need to set the tracking server ARN
-        # as an environment variable for authentication
-        tracking_arn = get_mlflow_tracking_arn()
-        if tracking_arn:
-            os.environ['MLFLOW_TRACKING_ARN'] = tracking_arn
-            logger.info(f"Set MLFLOW_TRACKING_ARN environment variable")
+        if tracking_uri.startswith("arn:aws:sagemaker"):
+            logger.info("Using SageMaker MLflow tracking server with ARN-based authentication")
+        else:
+            logger.info("Using standard MLflow tracking server")
         
     else:
         logger.warning("No MLflow tracking URI available - running without MLflow")
         return False
 
     # Set the experiment (this will create it if it doesn't exist)
-    mlflow.set_experiment("iris-model-training")
-    return True
-
-
-def get_mlflow_tracking_arn():
-    """Get MLflow tracking server ARN"""
     try:
-        # Use boto3 to get the ARN for the specific MLflow tracking server
-        region = os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')
-        sagemaker_client = boto3.client("sagemaker", region_name=region)
-
-        # Get detailed information for the specific tracking server
-        detail_response = sagemaker_client.describe_mlflow_tracking_server(
-            TrackingServerName=MLFLOW_TRACKING_SERVER_NAME
-        )
-        
-        tracking_arn = detail_response.get("TrackingServerArn")
-        if tracking_arn:
-            logger.info(f"Retrieved MLflow tracking server ARN: {tracking_arn}")
-            return tracking_arn
-        else:
-            logger.warning(f"No TrackingServerArn in response: {detail_response}")
-            return None
-        
+        mlflow.set_experiment("iris-model-training")
+        logger.info("MLflow experiment 'iris-model-training' set successfully")
+        return True
     except Exception as e:
-        logger.warning(f"Failed to get MLflow tracking server ARN '{MLFLOW_TRACKING_SERVER_NAME}': {e}")
-        return None
+        logger.error(f"Failed to set MLflow experiment: {e}")
+        return False
 
 
 def save_to_mlflow(model, scaler, accuracy, class_names):
