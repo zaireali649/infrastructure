@@ -140,13 +140,17 @@ def save_to_mlflow(model, scaler, accuracy, class_names):
     """Save model to MLflow"""
     logger.info("Saving model to MLflow")
 
-    with mlflow.start_run():
+    # Create meaningful run name
+    training_date = datetime.now()
+    run_name = f"iris-training-{training_date.strftime('%Y-%m-%d_%H-%M-%S')}-acc-{accuracy:.3f}"
+    
+    with mlflow.start_run(run_name=run_name):
         # Log parameters
         mlflow.log_param("model_type", "RandomForestClassifier")
         mlflow.log_param("n_estimators", 100)
         mlflow.log_param("max_depth", 5)
         mlflow.log_param("dataset", "iris")
-        mlflow.log_param("training_date", datetime.now().isoformat())
+        mlflow.log_param("training_date", training_date.isoformat())
         
         # Log metrics
         mlflow.log_metric("accuracy", accuracy)
