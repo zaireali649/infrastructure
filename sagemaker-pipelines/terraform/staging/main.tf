@@ -59,6 +59,7 @@ locals {
   
   # MLflow Configuration - discovered at runtime
   mlflow_tracking_uri = ""  # Will be discovered dynamically in the container
+  mlflow_tracking_server_name = "mlflow-staging-mlflow"
   
   # Scheduling Configuration
   enable_training_schedule  = true
