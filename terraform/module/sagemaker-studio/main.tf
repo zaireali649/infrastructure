@@ -106,7 +106,8 @@ resource "aws_iam_role_policy" "sagemaker_basic_access" {
       {
         Effect = "Allow"
         Action = [
-          "sagemaker:*"
+          "sagemaker:*",
+          "sagemaker-mlflow:*"
         ]
         Resource = "*"
       },
