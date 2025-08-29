@@ -197,6 +197,11 @@ variable "training_environment_variables" {
   default     = {}
 }
 
+variable "mlflow_tracking_server_name" {
+  description = "Name of the MLflow tracking server"
+  type        = string
+}
+
 variable "training_input_content_type" {
   description = "Content type for training input data"
   type        = string
