@@ -79,11 +79,7 @@ resource "aws_iam_role_policy" "training_policy" {
         Effect = "Allow"
         Action = [
           "sagemaker:*",
-          "logs:CreateLogGroup",
-          "logs:CreateLogStream",
-          "logs:PutLogEvents",
-          "logs:GetLogEvents",
-          "logs:DescribeLogStreams",
+          "logs:*",
           "ecr:GetAuthorizationToken",
           "ecr:BatchCheckLayerAvailability",
           "ecr:GetDownloadUrlForLayer",
@@ -180,11 +176,7 @@ resource "aws_iam_role_policy" "processing_policy" {
         Effect = "Allow"
         Action = [
           "sagemaker:*",
-          "logs:CreateLogGroup",
-          "logs:CreateLogStream",
-          "logs:PutLogEvents",
-          "logs:GetLogEvents",
-          "logs:DescribeLogStreams",
+          "logs:*",
           "ecr:GetAuthorizationToken",
           "ecr:BatchCheckLayerAvailability",
           "ecr:GetDownloadUrlForLayer",
