@@ -82,6 +82,7 @@ resource "aws_iam_role_policy" "training_policy" {
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
           "logs:PutLogEvents",
+          "logs:GetLogEvents",
           "logs:DescribeLogStreams",
           "ecr:GetAuthorizationToken",
           "ecr:BatchCheckLayerAvailability",
@@ -182,6 +183,7 @@ resource "aws_iam_role_policy" "processing_policy" {
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
           "logs:PutLogEvents",
+          "logs:GetLogEvents",
           "logs:DescribeLogStreams",
           "ecr:GetAuthorizationToken",
           "ecr:BatchCheckLayerAvailability",
@@ -258,6 +260,7 @@ resource "aws_sagemaker_pipeline" "training_pipeline" {
           RoleArn          = aws_iam_role.training_role[0].arn
           AppSpecification = {
             ImageUri = { Get = "Parameters.TrainingImage" }
+            ContainerEntrypoint = ["python", "/opt/ml/code/train.py"]
           }
           ProcessingOutputConfig = {
             Outputs = [
