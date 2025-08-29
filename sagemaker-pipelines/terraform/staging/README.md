@@ -193,7 +193,6 @@ aws sagemaker describe-pipeline-execution \
 ```
 s3://mlflow-staging-mlflow-artifacts-zali-staging/  # Shared with MLflow
 ├── iris/                    # SageMaker pipeline data
-│   ├── input/              # Training data (optional - using built-in dataset)
 │   ├── models/             # Model artifacts from SageMaker
 │   ├── inference-input/    # Inference input data (generated)
 │   └── inference-output/   # Daily prediction results
@@ -201,6 +200,8 @@ s3://mlflow-staging-mlflow-artifacts-zali-staging/  # Shared with MLflow
     ├── experiments/
     ├── models/
     └── runs/
+
+Note: No iris/input/ directory needed - training uses built-in Iris dataset
 ```
 
 ### Model Flow
