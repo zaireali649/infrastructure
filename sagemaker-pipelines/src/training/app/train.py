@@ -14,8 +14,11 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, classification_report
 import mlflow
 import mlflow.sklearn
+from mlflow.models.signature import infer_signature
+from mlflow.types.schema import Schema, ColSpec
 import joblib
 import boto3
+import numpy as np
 from datetime import datetime
 
 # Setup logging
@@ -194,11 +197,30 @@ def save_to_mlflow(model, scaler, accuracy, class_names):
         - test_size: 0.2 (stratified split)
         """.strip()
 
-        # Log model (without description parameter)
+        # Create input/output schema for the model
+        # Define input schema (Iris features)
+        input_schema = Schema([
+            ColSpec("double", "sepal length (cm)"),
+            ColSpec("double", "sepal width (cm)"),  
+            ColSpec("double", "petal length (cm)"),
+            ColSpec("double", "petal width (cm)")
+        ])
+        
+        # Define output schema (predictions)
+        output_schema = Schema([ColSpec("long", "prediction")])
+        
+        # Create signature with input and output schemas
+        signature = mlflow.models.ModelSignature(
+            inputs=input_schema,
+            outputs=output_schema
+        )
+        
+        # Log model with schema signature
         model_info = mlflow.sklearn.log_model(
             wrapped_model, 
             "model", 
-            registered_model_name=MODEL_NAME
+            registered_model_name=MODEL_NAME,
+            signature=signature
         )
 
         # Update descriptions using MLflow client after model is logged
