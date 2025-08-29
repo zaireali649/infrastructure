@@ -74,8 +74,9 @@ def train_model(X, y):
 def discover_mlflow_tracking_server():
     """Dynamically discover MLflow tracking server"""
     try:
-        # Use boto3 to find the MLflow tracking server
-        sagemaker_client = boto3.client("sagemaker")
+        # Use boto3 to find the MLflow tracking server with region
+        region = os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')
+        sagemaker_client = boto3.client("sagemaker", region_name=region)
 
         # List MLflow tracking servers
         response = sagemaker_client.list_mlflow_tracking_servers()
@@ -162,13 +163,28 @@ def save_local_artifacts(model, scaler):
     """Save model artifacts locally for SageMaker"""
     logger.info(f"Saving artifacts to {MODEL_DIR}")
 
-    os.makedirs(MODEL_DIR, exist_ok=True)
-
-    # Save model and scaler
-    joblib.dump(model, os.path.join(MODEL_DIR, "model.joblib"))
-    joblib.dump(scaler, os.path.join(MODEL_DIR, "scaler.joblib"))
-
-    logger.info("Local artifacts saved")
+    try:
+        # Ensure directory exists with proper permissions
+        os.makedirs(MODEL_DIR, mode=0o755, exist_ok=True)
+        
+        # Save model and scaler
+        joblib.dump(model, os.path.join(MODEL_DIR, "model.joblib"))
+        joblib.dump(scaler, os.path.join(MODEL_DIR, "scaler.joblib"))
+        
+        logger.info("Local artifacts saved")
+    except PermissionError as e:
+        logger.warning(f"Permission denied saving to {MODEL_DIR}: {e}")
+        # Try alternative output location
+        alt_dir = "/tmp/model_output"
+        logger.info(f"Trying alternative location: {alt_dir}")
+        os.makedirs(alt_dir, mode=0o755, exist_ok=True)
+        joblib.dump(model, os.path.join(alt_dir, "model.joblib"))
+        joblib.dump(scaler, os.path.join(alt_dir, "scaler.joblib"))
+        logger.info(f"Artifacts saved to alternative location: {alt_dir}")
+    except Exception as e:
+        logger.error(f"Failed to save local artifacts: {e}")
+        # Don't fail the entire training job for local artifact saving
+        logger.warning("Continuing training without local artifacts")
 
 
 def main():
