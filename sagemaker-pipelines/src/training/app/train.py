@@ -80,19 +80,41 @@ def discover_mlflow_tracking_server():
 
         # List MLflow tracking servers
         response = sagemaker_client.list_mlflow_tracking_servers()
+        
+        # Debug: Log the response structure
+        logger.info(f"Found {len(response.get('TrackingServerSummaries', []))} MLflow tracking servers")
+        if response.get("TrackingServerSummaries"):
+            first_server = response['TrackingServerSummaries'][0]
+            logger.info(f"First server keys: {list(first_server.keys())}")
+            logger.info(f"First server details: {first_server}")
 
         # Find the staging MLflow server
         for server in response["TrackingServerSummaries"]:
-            if "staging" in server["TrackingServerName"].lower():
-                tracking_url = server["TrackingServerUrl"]
-                logger.info(f"Discovered MLflow tracking server: {tracking_url}")
-                return tracking_url
+            server_name = server.get("TrackingServerName", "")
+            if "staging" in server_name.lower():
+                # Try different possible field names for the URL
+                tracking_url = (server.get("TrackingServerUrl") or 
+                               server.get("tracking_server_url") or
+                               server.get("Url") or
+                               server.get("url"))
+                if tracking_url:
+                    logger.info(f"Discovered MLflow tracking server: {tracking_url}")
+                    return tracking_url
+                else:
+                    logger.warning(f"Found staging server but no URL field in: {server}")
 
         # If no staging server found, try to find any MLflow server
         if response["TrackingServerSummaries"]:
-            tracking_url = response["TrackingServerSummaries"][0]["TrackingServerUrl"]
-            logger.info(f"Using first available MLflow tracking server: {tracking_url}")
-            return tracking_url
+            server = response["TrackingServerSummaries"][0]
+            tracking_url = (server.get("TrackingServerUrl") or 
+                           server.get("tracking_server_url") or
+                           server.get("Url") or
+                           server.get("url"))
+            if tracking_url:
+                logger.info(f"Using first available MLflow tracking server: {tracking_url}")
+                return tracking_url
+            else:
+                logger.warning(f"Found server but no URL field in: {server}")
 
         logger.warning("No MLflow tracking servers found")
         return None
