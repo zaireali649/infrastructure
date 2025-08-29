@@ -1,15 +1,17 @@
-# Multi-stage build for ML inference container with uv
-FROM python:3.11-slim as builder
+# Single-stage build for ML inference container with uv
+FROM python:3.11-slim
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    UV_CACHE_DIR=/tmp/uv-cache
+    UV_CACHE_DIR=/tmp/uv-cache \
+    PYTHONPATH="/opt/ml/code:$PYTHONPATH"
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
+    libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Install uv
@@ -21,27 +23,9 @@ WORKDIR /app
 # Copy project files for dependency resolution
 COPY pyproject.toml uv.lock ./
 
-# Create virtual environment and install dependencies
-RUN uv venv /opt/venv && \
-    uv sync --frozen --no-dev --no-install-project && \
+# Install dependencies globally (no virtual environment in container)
+RUN uv sync --frozen --no-dev --no-install-project --system && \
     rm -rf /tmp/uv-cache
-
-# Production stage
-FROM python:3.11-slim as production
-
-# Set environment variables
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PATH="/opt/venv/bin:$PATH" \
-    PYTHONPATH="/opt/ml/code:$PYTHONPATH"
-
-# Install system dependencies for production
-RUN apt-get update && apt-get install -y \
-    libgomp1 \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy virtual environment from builder
-COPY --from=builder /opt/venv /opt/venv
 
 # Create necessary directories
 RUN mkdir -p /opt/ml/code /opt/ml/processing/input /opt/ml/processing/output
