@@ -28,6 +28,7 @@ OUTPUT_DIR = os.environ.get("SM_OUTPUT_DATA_DIR", "/opt/ml/output")
 
 # MLflow settings
 MLFLOW_TRACKING_URI = os.environ.get("MLFLOW_TRACKING_URI")
+MLFLOW_TRACKING_SERVER_NAME = os.environ.get("MLFLOW_TRACKING_SERVER_NAME", "mlflow-staging-mlflow")
 MODEL_NAME = "iris-model"
 
 
@@ -72,55 +73,29 @@ def train_model(X, y):
 
 
 def discover_mlflow_tracking_server():
-    """Dynamically discover MLflow tracking server"""
+    """Get MLflow tracking server URL by name"""
     try:
-        # Use boto3 to find the MLflow tracking server with region
+        # Use boto3 to get the specific MLflow tracking server
         region = os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')
         sagemaker_client = boto3.client("sagemaker", region_name=region)
 
-        # List MLflow tracking servers
-        response = sagemaker_client.list_mlflow_tracking_servers()
+        logger.info(f"Getting MLflow tracking server: {MLFLOW_TRACKING_SERVER_NAME}")
         
-        # Debug: Log the response structure
-        logger.info(f"Found {len(response.get('TrackingServerSummaries', []))} MLflow tracking servers")
-        if response.get("TrackingServerSummaries"):
-            first_server = response['TrackingServerSummaries'][0]
-            logger.info(f"First server keys: {list(first_server.keys())}")
-            logger.info(f"First server details: {first_server}")
-
-        # Find the staging MLflow server
-        for server in response["TrackingServerSummaries"]:
-            server_name = server.get("TrackingServerName", "")
-            if "staging" in server_name.lower():
-                # Try different possible field names for the URL
-                tracking_url = (server.get("TrackingServerUrl") or 
-                               server.get("tracking_server_url") or
-                               server.get("Url") or
-                               server.get("url"))
-                if tracking_url:
-                    logger.info(f"Discovered MLflow tracking server: {tracking_url}")
-                    return tracking_url
-                else:
-                    logger.warning(f"Found staging server but no URL field in: {server}")
-
-        # If no staging server found, try to find any MLflow server
-        if response["TrackingServerSummaries"]:
-            server = response["TrackingServerSummaries"][0]
-            tracking_url = (server.get("TrackingServerUrl") or 
-                           server.get("tracking_server_url") or
-                           server.get("Url") or
-                           server.get("url"))
-            if tracking_url:
-                logger.info(f"Using first available MLflow tracking server: {tracking_url}")
-                return tracking_url
+        # Get detailed information for the specific tracking server
+        detail_response = sagemaker_client.describe_mlflow_tracking_server(
+            TrackingServerName=MLFLOW_TRACKING_SERVER_NAME
+        )
+        
+        tracking_url = detail_response.get("TrackingServerUrl")
+        if tracking_url:
+            logger.info(f"Retrieved MLflow tracking server URL: {tracking_url}")
+            return tracking_url
             else:
-                logger.warning(f"Found server but no URL field in: {server}")
-
-        logger.warning("No MLflow tracking servers found")
-        return None
-
+            logger.warning(f"No TrackingServerUrl in response: {detail_response}")
+            return None
+        
     except Exception as e:
-        logger.warning(f"Failed to discover MLflow tracking server: {e}")
+        logger.warning(f"Failed to get MLflow tracking server '{MLFLOW_TRACKING_SERVER_NAME}': {e}")
         return None
 
 
@@ -148,15 +123,15 @@ def save_to_mlflow(model, scaler, accuracy, class_names):
     logger.info("Saving model to MLflow")
 
     with mlflow.start_run():
-        # Log parameters
-        mlflow.log_param("model_type", "RandomForestClassifier")
+            # Log parameters
+            mlflow.log_param("model_type", "RandomForestClassifier")
         mlflow.log_param("n_estimators", 100)
         mlflow.log_param("max_depth", 5)
         mlflow.log_param("dataset", "iris")
-        mlflow.log_param("training_date", datetime.now().isoformat())
-
-        # Log metrics
-        mlflow.log_metric("accuracy", accuracy)
+            mlflow.log_param("training_date", datetime.now().isoformat())
+            
+            # Log metrics
+            mlflow.log_metric("accuracy", accuracy)
 
         # Create a model with preprocessing
         class IrisModel:
@@ -219,7 +194,7 @@ def main():
 
         # Load data
         X, y, class_names = load_iris_data()
-
+        
         # Train model
         model, scaler, accuracy = train_model(X, y)
 
@@ -233,7 +208,7 @@ def main():
         save_local_artifacts(model, scaler)
 
         logger.info("Training completed successfully!")
-
+        
     except Exception as e:
         logger.error(f"Training failed: {e}")
         raise
