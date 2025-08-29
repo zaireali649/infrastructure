@@ -194,60 +194,76 @@ def save_to_mlflow(model, scaler, accuracy, class_names):
         - test_size: 0.2 (stratified split)
         """.strip()
 
-        # Log model with description
+        # Log model (without description parameter)
         model_info = mlflow.sklearn.log_model(
             wrapped_model, 
             "model", 
-            registered_model_name=MODEL_NAME,
-            description=version_description
+            registered_model_name=MODEL_NAME
         )
 
-        # Update model description at the model level (only for first version)
+        # Update descriptions using MLflow client after model is logged
         try:
             client = mlflow.tracking.MlflowClient()
             
-            # Get model details to check if description exists
-            model_details = client.get_registered_model(MODEL_NAME)
-            
-            # If model description is empty, add a comprehensive description
-            if not model_details.description or model_details.description.strip() == "":
-                model_description = """
-                Iris Flower Classification Model
+            # Get the latest model version that was just created
+            latest_versions = client.get_latest_versions(MODEL_NAME)
+            if latest_versions:
+                latest_version = latest_versions[0].version
                 
-                This model classifies iris flowers into three species based on flower measurements.
-                
-                Overview:
-                - Dataset: Famous Iris dataset with 150 samples
-                - Task: Multi-class classification (3 species)
-                - Features: 4 numeric features (sepal/petal dimensions)
-                - Algorithm: Random Forest with preprocessing pipeline
-                
-                Model Pipeline:
-                1. StandardScaler for feature normalization
-                2. Random Forest Classifier for prediction
-                3. Automatic hyperparameter tuning
-                
-                Training Schedule:
-                - Automated weekly training (Sundays at 2 AM UTC)
-                - Continuous model improvement and versioning
-                - Performance monitoring via MLflow
-                
-                Usage:
-                - Daily inference on randomly generated samples
-                - Real-time predictions via SageMaker endpoints
-                - Batch processing capabilities
-                
-                Maintained by: ML Engineering Team
-                """.strip()
-                
-                client.update_registered_model(
+                # Update the version description
+                client.update_model_version(
                     name=MODEL_NAME,
-                    description=model_description
+                    version=latest_version,
+                    description=version_description
                 )
-                logger.info("Updated model-level description")
+                logger.info(f"Updated version {latest_version} description")
+            
+            # Check if model-level description needs to be set (only for first version)
+            try:
+                model_details = client.get_registered_model(MODEL_NAME)
+                
+                # If model description is empty, add a comprehensive description
+                if not model_details.description or model_details.description.strip() == "":
+                    model_description = """
+                    Iris Flower Classification Model
+                    
+                    This model classifies iris flowers into three species based on flower measurements.
+                    
+                    Overview:
+                    - Dataset: Famous Iris dataset with 150 samples
+                    - Task: Multi-class classification (3 species)
+                    - Features: 4 numeric features (sepal/petal dimensions)
+                    - Algorithm: Random Forest with preprocessing pipeline
+                    
+                    Model Pipeline:
+                    1. StandardScaler for feature normalization
+                    2. Random Forest Classifier for prediction
+                    3. Automatic hyperparameter tuning
+                    
+                    Training Schedule:
+                    - Automated weekly training (Sundays at 2 AM UTC)
+                    - Continuous model improvement and versioning
+                    - Performance monitoring via MLflow
+                    
+                    Usage:
+                    - Daily inference on randomly generated samples
+                    - Real-time predictions via SageMaker endpoints
+                    - Batch processing capabilities
+                    
+                    Maintained by: ML Engineering Team
+                    """.strip()
+                    
+                    client.update_registered_model(
+                        name=MODEL_NAME,
+                        description=model_description
+                    )
+                    logger.info("Updated model-level description")
+                    
+            except Exception as e:
+                logger.warning(f"Could not update model-level description: {e}")
             
         except Exception as e:
-            logger.warning(f"Could not update model description: {e}")
+            logger.warning(f"Could not update model descriptions: {e}")
 
         logger.info(f"Model version saved to MLflow as '{MODEL_NAME}' with descriptions")
 
