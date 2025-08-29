@@ -57,8 +57,8 @@ locals {
   training_image_uri  = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${local.aws_region}.amazonaws.com/ml-platform-staging-training:latest"
   inference_image_uri = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${local.aws_region}.amazonaws.com/ml-platform-staging-inference:latest"
   
-  # MLflow Configuration - dynamically retrieved
-  mlflow_tracking_uri = data.aws_sagemaker_mlflow_tracking_server.mlflow_server.tracking_server_url
+  # MLflow Configuration - discovered at runtime
+  mlflow_tracking_uri = ""  # Will be discovered dynamically in the container
   
   # Scheduling Configuration
   enable_training_schedule  = true
@@ -74,10 +74,8 @@ data "aws_s3_bucket" "ml_bucket" {
   bucket = local.s3_bucket_name
 }
 
-# Get the existing MLflow tracking server
-data "aws_sagemaker_mlflow_tracking_server" "mlflow_server" {
-  tracking_server_name = "mlflow-staging-mlflow"
-}
+# Get MLflow tracking server dynamically using AWS CLI in the container
+# The training script will discover the MLflow server at runtime
 
 # Call the SageMaker Pipelines module
 module "sagemaker_pipelines" {

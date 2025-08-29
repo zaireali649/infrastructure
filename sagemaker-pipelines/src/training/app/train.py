@@ -15,6 +15,8 @@ from sklearn.metrics import accuracy_score, classification_report
 import mlflow
 import mlflow.sklearn
 import joblib
+import boto3
+import subprocess
 from datetime import datetime
 
 # Setup logging
@@ -70,13 +72,52 @@ def train_model(X, y):
     return model, scaler, accuracy
 
 
+def discover_mlflow_tracking_server():
+    """Dynamically discover MLflow tracking server"""
+    try:
+        # Use boto3 to find the MLflow tracking server
+        sagemaker_client = boto3.client('sagemaker')
+        
+        # List MLflow tracking servers
+        response = sagemaker_client.list_mlflow_tracking_servers()
+        
+        # Find the staging MLflow server
+        for server in response['TrackingServerSummaries']:
+            if 'staging' in server['TrackingServerName'].lower():
+                tracking_url = server['TrackingServerUrl']
+                logger.info(f"Discovered MLflow tracking server: {tracking_url}")
+                return tracking_url
+        
+        # If no staging server found, try to find any MLflow server
+        if response['TrackingServerSummaries']:
+            tracking_url = response['TrackingServerSummaries'][0]['TrackingServerUrl']
+            logger.info(f"Using first available MLflow tracking server: {tracking_url}")
+            return tracking_url
+            
+        logger.warning("No MLflow tracking servers found")
+        return None
+        
+    except Exception as e:
+        logger.warning(f"Failed to discover MLflow tracking server: {e}")
+        return None
+
 def setup_mlflow():
     """Setup MLflow tracking"""
-    if MLFLOW_TRACKING_URI:
-        mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
-        logger.info(f"MLflow URI: {MLFLOW_TRACKING_URI}")
-
+    tracking_uri = MLFLOW_TRACKING_URI
+    
+    # If no URI provided via environment, try to discover it
+    if not tracking_uri:
+        tracking_uri = discover_mlflow_tracking_server()
+    
+    if tracking_uri:
+        mlflow.set_tracking_uri(tracking_uri)
+        logger.info(f"MLflow URI: {tracking_uri}")
+    else:
+        logger.warning("No MLflow tracking URI available - running without MLflow")
+        return False
+    
     mlflow.set_experiment("iris-model-training")
+    return True
 
 
 def save_to_mlflow(model, scaler, accuracy, class_names):
@@ -84,15 +125,15 @@ def save_to_mlflow(model, scaler, accuracy, class_names):
     logger.info("Saving model to MLflow")
 
     with mlflow.start_run():
-        # Log parameters
-        mlflow.log_param("model_type", "RandomForestClassifier")
+            # Log parameters
+            mlflow.log_param("model_type", "RandomForestClassifier")
         mlflow.log_param("n_estimators", 100)
         mlflow.log_param("max_depth", 5)
         mlflow.log_param("dataset", "iris")
-        mlflow.log_param("training_date", datetime.now().isoformat())
-
-        # Log metrics
-        mlflow.log_metric("accuracy", accuracy)
+            mlflow.log_param("training_date", datetime.now().isoformat())
+            
+            # Log metrics
+            mlflow.log_metric("accuracy", accuracy)
 
         # Create a model with preprocessing
         class IrisModel:
@@ -133,25 +174,28 @@ def save_local_artifacts(model, scaler):
 def main():
     """Main training function"""
     logger.info("Starting Iris model training")
-
+    
     try:
         # Setup MLflow
-        setup_mlflow()
-
+        mlflow_available = setup_mlflow()
+        
         # Load data
         X, y, class_names = load_iris_data()
-
+        
         # Train model
         model, scaler, accuracy = train_model(X, y)
-
-        # Save to MLflow
-        save_to_mlflow(model, scaler, accuracy, class_names)
-
+        
+        # Save to MLflow if available
+        if mlflow_available:
+            save_to_mlflow(model, scaler, accuracy, class_names)
+        else:
+            logger.warning("Skipping MLflow logging - no tracking server available")
+        
         # Save local artifacts
         save_local_artifacts(model, scaler)
-
+        
         logger.info("Training completed successfully!")
-
+        
     except Exception as e:
         logger.error(f"Training failed: {e}")
         raise
