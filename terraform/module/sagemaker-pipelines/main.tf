@@ -240,7 +240,7 @@ resource "aws_sagemaker_pipeline" "training_pipeline" {
         Name = "TrainingStep"
         Type = "Training"
         Arguments = merge({
-          TrainingJobName = "${var.project_name}-${var.environment}-training-{execution-id}"
+          TrainingJobName = "${var.project_name}-train-{execution-id}"
           RoleArn        = aws_iam_role.training_role[0].arn
           AlgorithmSpecification = {
             TrainingImage     = { Get = "Parameters.TrainingImage" }
@@ -310,7 +310,7 @@ resource "aws_sagemaker_pipeline" "processing_pipeline" {
         Name = "ProcessingStep"
         Type = "Processing"
         Arguments = merge({
-          ProcessingJobName = "${var.project_name}-${var.environment}-processing-{execution-id}"
+          ProcessingJobName = "${var.project_name}-proc-{execution-id}"
           RoleArn          = aws_iam_role.processing_role[0].arn
           AppSpecification = {
             ImageUri = { Get = "Parameters.ProcessingImage" }
