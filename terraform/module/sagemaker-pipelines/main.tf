@@ -277,8 +277,9 @@ resource "aws_sagemaker_pipeline" "training_pipeline" {
             MaxRuntimeInSeconds = var.training_max_runtime_seconds
           }
           Environment = merge(var.training_environment_variables, {
-            SM_MODEL_DIR       = "/opt/ml/processing/output"
-            SM_OUTPUT_DATA_DIR = "/opt/ml/processing/output"
+            SM_MODEL_DIR         = "/opt/ml/processing/output"
+            SM_OUTPUT_DATA_DIR   = "/opt/ml/processing/output"
+            AWS_DEFAULT_REGION   = data.aws_region.current.name
           })
         }, length(var.subnet_ids) > 0 ? {
           NetworkConfig = {
