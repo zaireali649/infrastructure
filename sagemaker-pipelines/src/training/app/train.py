@@ -90,7 +90,7 @@ def discover_mlflow_tracking_server():
         if tracking_url:
             logger.info(f"Retrieved MLflow tracking server URL: {tracking_url}")
             return tracking_url
-            else:
+        else:
             logger.warning(f"No TrackingServerUrl in response: {detail_response}")
             return None
         
@@ -123,15 +123,15 @@ def save_to_mlflow(model, scaler, accuracy, class_names):
     logger.info("Saving model to MLflow")
 
     with mlflow.start_run():
-            # Log parameters
-            mlflow.log_param("model_type", "RandomForestClassifier")
+        # Log parameters
+        mlflow.log_param("model_type", "RandomForestClassifier")
         mlflow.log_param("n_estimators", 100)
         mlflow.log_param("max_depth", 5)
         mlflow.log_param("dataset", "iris")
-            mlflow.log_param("training_date", datetime.now().isoformat())
-            
-            # Log metrics
-            mlflow.log_metric("accuracy", accuracy)
+        mlflow.log_param("training_date", datetime.now().isoformat())
+        
+        # Log metrics
+        mlflow.log_metric("accuracy", accuracy)
 
         # Create a model with preprocessing
         class IrisModel:
