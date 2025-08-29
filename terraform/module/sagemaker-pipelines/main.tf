@@ -260,7 +260,7 @@ resource "aws_sagemaker_pipeline" "training_pipeline" {
           RoleArn          = aws_iam_role.training_role[0].arn
           AppSpecification = {
             ImageUri = { Get = "Parameters.TrainingImage" }
-            ContainerEntrypoint = ["/opt/venv/bin/python", "/opt/ml/code/train.py"]
+            ContainerEntrypoint = ["python", "/opt/ml/code/train.py"]
           }
           ProcessingOutputConfig = {
             Outputs = [
