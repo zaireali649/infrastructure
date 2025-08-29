@@ -252,16 +252,24 @@ resource "aws_sagemaker_pipeline" "training_pipeline" {
     Steps = [
       {
         Name = "TrainingStep"
-        Type = "Training"
+        Type = "Processing"
         Arguments = merge({
-          TrainingJobName = "${substr(var.project_name, 0, 8)}-train"
-          RoleArn        = aws_iam_role.training_role[0].arn
-          AlgorithmSpecification = {
-            TrainingImage     = { Get = "Parameters.TrainingImage" }
-            TrainingInputMode = "NoInput"
+          ProcessingJobName = "${substr(var.project_name, 0, 8)}-train"
+          RoleArn          = aws_iam_role.training_role[0].arn
+          AppSpecification = {
+            ImageUri = { Get = "Parameters.TrainingImage" }
           }
-          OutputDataConfig = {
-            S3OutputPath = var.model_output_s3_path
+          ProcessingOutputConfig = {
+            Outputs = [
+              {
+                OutputName = "model"
+                S3Output = {
+                  S3Uri           = var.model_output_s3_path
+                  LocalPath       = "/opt/ml/processing/output"
+                  S3UploadMode    = "EndOfJob"
+                }
+              }
+            ]
           }
           ResourceConfig = {
             InstanceType   = var.training_instance_type
@@ -271,15 +279,16 @@ resource "aws_sagemaker_pipeline" "training_pipeline" {
           StoppingCondition = {
             MaxRuntimeInSeconds = var.training_max_runtime_seconds
           }
-          HyperParameters = var.training_hyperparameters
           Environment = merge(var.training_environment_variables, {
-            SM_MODEL_DIR       = "/opt/ml/model"
-            SM_OUTPUT_DATA_DIR = "/opt/ml/output"
+            SM_MODEL_DIR       = "/opt/ml/processing/output"
+            SM_OUTPUT_DATA_DIR = "/opt/ml/processing/output"
           })
         }, length(var.subnet_ids) > 0 ? {
-          VpcConfig = {
-            SecurityGroupIds = var.security_group_ids
-            Subnets         = var.subnet_ids
+          NetworkConfig = {
+            VpcConfig = {
+              SecurityGroupIds = var.security_group_ids
+              Subnets         = var.subnet_ids
+            }
           }
         } : {})
       }
