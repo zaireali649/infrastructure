@@ -97,6 +97,7 @@ resource "aws_iam_role_policy" "sagemaker_basic_access" {
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
           "logs:PutLogEvents",
+          "logs:GetLogEvents",
           "logs:DescribeLogGroups",
           "logs:DescribeLogStreams"
         ]
