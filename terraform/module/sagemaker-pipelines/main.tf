@@ -127,6 +127,34 @@ resource "aws_iam_role_policy" "training_vpc_policy" {
   })
 }
 
+# Add MLflow permissions for training if MLflow tracking server is configured
+resource "aws_iam_role_policy" "training_mlflow_policy" {
+  count = var.enable_training_pipeline && var.mlflow_tracking_server_name != "" ? 1 : 0
+  
+  name = "${var.project_name}-${var.environment}-training-mlflow-policy"
+  role = aws_iam_role.training_role[0].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "sagemaker:DescribeMlflowTrackingServer"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "sagemaker-mlflow:*"
+        ]
+        Resource = "arn:aws:sagemaker:*:*:mlflow-tracking-server/${var.mlflow_tracking_server_name}"
+      }
+    ]
+  })
+}
+
 # IAM Role for SageMaker Processing Jobs (conditional)
 resource "aws_iam_role" "processing_role" {
   count = var.enable_processing_pipeline ? 1 : 0
