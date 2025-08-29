@@ -23,8 +23,10 @@ WORKDIR /app
 # Copy project files for dependency resolution
 COPY pyproject.toml uv.lock ./
 
-# Install dependencies globally (no virtual environment in container)
-RUN uv sync --frozen --no-dev --no-install-project --system && \
+# Export dependencies and install globally
+RUN uv export --frozen --no-dev --format requirements-txt > requirements.txt && \
+    pip install --no-cache-dir -r requirements.txt && \
+    rm requirements.txt && \
     rm -rf /tmp/uv-cache
 
 # Create necessary directories
