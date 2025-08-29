@@ -89,6 +89,13 @@ resource "aws_iam_role_policy" "training_policy" {
           "ecr:BatchGetImage"
         ]
         Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "iam:PassRole"
+        ]
+        Resource = aws_iam_role.training_role[0].arn
       }
     ]
   })
@@ -184,6 +191,13 @@ resource "aws_iam_role_policy" "processing_policy" {
           "secretsmanager:DescribeSecret"
         ]
         Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "iam:PassRole"
+        ]
+        Resource = aws_iam_role.processing_role[0].arn
       }
     ]
   })
