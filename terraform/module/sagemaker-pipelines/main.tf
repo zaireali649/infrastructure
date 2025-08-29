@@ -277,9 +277,10 @@ resource "aws_sagemaker_pipeline" "training_pipeline" {
             MaxRuntimeInSeconds = var.training_max_runtime_seconds
           }
           Environment = merge(var.training_environment_variables, {
-            SM_MODEL_DIR         = "/opt/ml/processing/output"
-            SM_OUTPUT_DATA_DIR   = "/opt/ml/processing/output"
-            AWS_DEFAULT_REGION   = data.aws_region.current.name
+            SM_MODEL_DIR                = "/opt/ml/processing/output"
+            SM_OUTPUT_DATA_DIR          = "/opt/ml/processing/output"
+            AWS_DEFAULT_REGION          = data.aws_region.current.name
+            MLFLOW_TRACKING_SERVER_NAME = var.mlflow_tracking_server_name
           })
         }, length(var.subnet_ids) > 0 ? {
           NetworkConfig = {
@@ -357,7 +358,10 @@ resource "aws_sagemaker_pipeline" "processing_pipeline" {
           StoppingCondition = {
             MaxRuntimeInSeconds = var.inference_max_runtime_seconds
           }
-          Environment = var.processing_environment_variables
+          Environment = merge(var.processing_environment_variables, {
+            AWS_DEFAULT_REGION          = data.aws_region.current.name
+            MLFLOW_TRACKING_SERVER_NAME = var.mlflow_tracking_server_name
+          })
         }, length(var.subnet_ids) > 0 ? {
           NetworkConfig = {
             VpcConfig = {
