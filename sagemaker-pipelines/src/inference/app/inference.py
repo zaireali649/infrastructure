@@ -87,8 +87,8 @@ def load_model():
         # Load the production model
         model_uri = f"models:/{MODEL_NAME}/Production"
         model = mlflow.sklearn.load_model(model_uri)
-        logger.info("Model loaded successfully")
-        return model
+        logger.info("Model loaded successfully from Production stage")
+        return model, "Production"
     except Exception as e:
         logger.warning(f"Failed to load production model: {e}")
         # Fallback to latest version
@@ -96,7 +96,7 @@ def load_model():
             model_uri = f"models:/{MODEL_NAME}/latest"
             model = mlflow.sklearn.load_model(model_uri)
             logger.info("Loaded latest model version")
-            return model
+            return model, "latest"
         except Exception as e2:
             logger.error(f"Failed to load any model: {e2}")
             raise
@@ -139,26 +139,62 @@ def make_predictions(model, data):
         raise
 
 
-def save_results(data, predictions, predicted_classes):
-    """Save prediction results"""
-    logger.info("Saving prediction results")
+def log_inference_to_mlflow(data, predictions, predicted_classes, model_version=None):
+    """Log inference results to MLflow as an experiment run"""
+    logger.info("Logging inference results to MLflow")
 
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-
-    # Create results dataframe
+    # Create results dataframe for analysis
     results = data.copy()
     results["prediction_numeric"] = predictions
     results["prediction_class"] = predicted_classes
     results["prediction_timestamp"] = datetime.now().isoformat()
 
-    # Save to CSV
-    output_file = os.path.join(
-        OUTPUT_DIR, f"predictions_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-    )
-    results.to_csv(output_file, index=False)
-
-    logger.info(f"Results saved to {output_file}")
-    logger.info(f"Prediction summary:\n{pd.Series(predicted_classes).value_counts()}")
+    # Get prediction summary
+    prediction_counts = pd.Series(predicted_classes).value_counts()
+    
+    try:
+        # Set experiment for inference logging
+        mlflow.set_experiment("iris-model-inference")
+        
+        with mlflow.start_run():
+            # Log run metadata
+            mlflow.log_param("model_name", MODEL_NAME)
+            mlflow.log_param("model_version", model_version or "latest")
+            mlflow.log_param("inference_timestamp", datetime.now().isoformat())
+            mlflow.log_param("num_samples", len(data))
+            
+            # Log prediction metrics
+            mlflow.log_metric("total_predictions", len(predictions))
+            for class_name, count in prediction_counts.items():
+                mlflow.log_metric(f"predictions_{class_name}", count)
+                mlflow.log_metric(f"percentage_{class_name}", (count / len(predictions)) * 100)
+            
+            # Log input data statistics as metrics
+            for column in data.columns:
+                mlflow.log_metric(f"input_{column}_mean", data[column].mean())
+                mlflow.log_metric(f"input_{column}_std", data[column].std())
+            
+            # Log the results as an artifact (optional CSV backup)
+            try:
+                os.makedirs(OUTPUT_DIR, mode=0o755, exist_ok=True)
+                output_file = os.path.join(
+                    OUTPUT_DIR, f"predictions_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+                )
+                results.to_csv(output_file, index=False)
+                mlflow.log_artifact(output_file, "predictions")
+                logger.info(f"Results also saved as artifact: {output_file}")
+            except PermissionError as e:
+                logger.warning(f"Could not save CSV artifact due to permissions: {e}")
+                # Continue without CSV - MLflow logging is the primary goal
+            
+            logger.info("Inference results logged to MLflow successfully")
+            logger.info(f"Prediction summary:\n{prediction_counts}")
+            
+    except Exception as e:
+        logger.error(f"Failed to log inference results to MLflow: {e}")
+        # Fallback: try to save basic results info
+        logger.info(f"Fallback - Prediction summary:\n{prediction_counts}")
+        raise
 
 
 def main():
@@ -174,7 +210,7 @@ def main():
             raise RuntimeError("MLflow tracking server not available")
 
         # Load model
-        model = load_model()
+        model, model_version = load_model()
 
         # Generate random data
         data = generate_random_iris_data(n_samples=20)
@@ -182,8 +218,8 @@ def main():
         # Make predictions
         predictions, predicted_classes = make_predictions(model, data)
 
-        # Save results
-        save_results(data, predictions, predicted_classes)
+        # Log results to MLflow
+        log_inference_to_mlflow(data, predictions, predicted_classes, model_version)
 
         logger.info("Inference completed successfully!")
 
