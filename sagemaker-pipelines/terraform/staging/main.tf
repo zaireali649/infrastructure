@@ -100,7 +100,7 @@ module "sagemaker_pipelines" {
   s3_bucket_arn             = data.aws_s3_bucket.ml_bucket.arn
   input_data_s3_path        = ""  # Not used - self-contained training
   model_output_s3_path      = "s3://${local.s3_bucket_name}/iris/models/"
-  inference_input_s3_path   = "s3://${local.s3_bucket_name}/iris/inference-input/"
+  inference_input_s3_path   = ""  # Not used - inference generates its own data
   inference_output_s3_path  = "s3://${local.s3_bucket_name}/iris/inference-output/"
 
   # Container images - using the ECR repositories we built

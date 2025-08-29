@@ -254,6 +254,34 @@ resource "aws_iam_role_policy" "processing_vpc_policy" {
   })
 }
 
+# Add MLflow permissions for processing if MLflow tracking server is configured
+resource "aws_iam_role_policy" "processing_mlflow_policy" {
+  count = var.enable_processing_pipeline && var.mlflow_tracking_server_name != "" ? 1 : 0
+  
+  name = "${var.project_name}-${var.environment}-processing-mlflow-policy"
+  role = aws_iam_role.processing_role[0].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "sagemaker:DescribeMlflowTrackingServer"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "sagemaker-mlflow:*"
+        ]
+        Resource = "arn:aws:sagemaker:*:*:mlflow-tracking-server/${var.mlflow_tracking_server_name}"
+      }
+    ]
+  })
+}
+
 # SageMaker Pipeline for training (conditional)
 resource "aws_sagemaker_pipeline" "training_pipeline" {
   count = var.enable_training_pipeline ? 1 : 0
@@ -351,19 +379,9 @@ resource "aws_sagemaker_pipeline" "processing_pipeline" {
           RoleArn          = aws_iam_role.processing_role[0].arn
           AppSpecification = {
             ImageUri = { Get = "Parameters.ProcessingImage" }
+            ContainerEntrypoint = ["python", "/opt/ml/code/inference.py"]
           }
-          ProcessingInputs = [
-            {
-              InputName = "input"
-              S3Input = {
-                S3Uri                = var.inference_input_s3_path
-                LocalPath           = "/opt/ml/processing/input"
-                S3DataType          = "S3Prefix"
-                S3InputMode         = "File"
-                S3DataDistributionType = "FullyReplicated"
-              }
-            }
-          ]
+          # No ProcessingInputs - inference script generates its own data
           ProcessingOutputConfig = {
             Outputs = [
               {
