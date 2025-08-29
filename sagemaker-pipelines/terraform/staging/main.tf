@@ -49,8 +49,9 @@ locals {
     Environment = "staging"
   }
   
-  # S3 Configuration - Update this value as needed
-  s3_bucket_name = "ml-platform-staging-bucket"  # Replace with your actual bucket name
+  # S3 Configuration - Using MLflow artifacts bucket
+  # This should match the bucket created by MLflow module
+  s3_bucket_name = "mlflow-staging-mlflow-artifacts-zali-staging"  # MLflow artifacts bucket
   
   # Container Images - Update these URIs with your actual ECR repositories
   training_image_uri  = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${local.aws_region}.amazonaws.com/ml-platform-staging-training:latest"
