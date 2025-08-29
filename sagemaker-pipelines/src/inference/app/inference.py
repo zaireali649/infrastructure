@@ -6,6 +6,7 @@ Loads model from MLflow and runs daily predictions on random data
 
 import os
 import logging
+import re
 import pandas as pd
 import numpy as np
 import mlflow
@@ -139,6 +140,18 @@ def make_predictions(model, data):
         raise
 
 
+def sanitize_metric_name(name):
+    """Sanitize metric names for MLflow compatibility"""
+    # MLflow allows: alphanumerics, underscores, dashes, periods, spaces, colons, slashes
+    # Remove parentheses and other invalid chars, replace with underscores
+    sanitized = re.sub(r'[^a-zA-Z0-9_\-\. :/]', '_', str(name))
+    # Remove multiple consecutive underscores
+    sanitized = re.sub(r'_+', '_', sanitized)
+    # Remove leading/trailing underscores
+    sanitized = sanitized.strip('_')
+    return sanitized
+
+
 def log_inference_to_mlflow(data, predictions, predicted_classes, model_version=None):
     """Log inference results to MLflow as an experiment run"""
     logger.info("Logging inference results to MLflow")
@@ -171,8 +184,9 @@ def log_inference_to_mlflow(data, predictions, predicted_classes, model_version=
             
             # Log input data statistics as metrics
             for column in data.columns:
-                mlflow.log_metric(f"input_{column}_mean", data[column].mean())
-                mlflow.log_metric(f"input_{column}_std", data[column].std())
+                sanitized_column = sanitize_metric_name(column)
+                mlflow.log_metric(f"input_{sanitized_column}_mean", data[column].mean())
+                mlflow.log_metric(f"input_{sanitized_column}_std", data[column].std())
             
             # Log the results as an artifact (optional CSV backup)
             try:
