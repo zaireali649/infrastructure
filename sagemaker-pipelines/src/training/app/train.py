@@ -73,7 +73,7 @@ def train_model(X, y):
 
 
 def discover_mlflow_tracking_server():
-    """Get MLflow tracking server URL by name"""
+    """Get MLflow tracking server ARN by name"""
     try:
         # Use boto3 to get the specific MLflow tracking server
         region = os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')
@@ -86,12 +86,16 @@ def discover_mlflow_tracking_server():
             TrackingServerName=MLFLOW_TRACKING_SERVER_NAME
         )
         
+        # For SageMaker MLflow, we need the ARN, not the URL
+        tracking_arn = detail_response.get("TrackingServerArn")
         tracking_url = detail_response.get("TrackingServerUrl")
-        if tracking_url:
+        
+        if tracking_arn:
             logger.info(f"Retrieved MLflow tracking server URL: {tracking_url}")
-            return tracking_url
+            logger.info(f"Retrieved MLflow tracking server ARN: {tracking_arn}")
+            return tracking_arn
         else:
-            logger.warning(f"No TrackingServerUrl in response: {detail_response}")
+            logger.warning(f"No TrackingServerArn in response: {detail_response}")
             return None
         
     except Exception as e:
@@ -109,9 +113,12 @@ def setup_mlflow():
 
     if tracking_uri:
         mlflow.set_tracking_uri(tracking_uri)
-        logger.info(f"MLflow URI: {tracking_uri}")
+        if tracking_uri.startswith("arn:"):
+            logger.info(f"MLflow ARN: {tracking_uri}")
+        else:
+            logger.info(f"MLflow URI: {tracking_uri}")
     else:
-        logger.warning("No MLflow tracking URI available - running without MLflow")
+        logger.warning("No MLflow tracking URI/ARN available - running without MLflow")
         return False
 
     mlflow.set_experiment("iris-model-training")
