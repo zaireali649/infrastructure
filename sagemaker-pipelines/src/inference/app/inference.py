@@ -81,26 +81,17 @@ def setup_mlflow():
 
 
 def load_model():
-    """Load the latest production model from MLflow"""
-    logger.info(f"Loading model '{MODEL_NAME}' from MLflow")
+    """Load the latest model from MLflow"""
+    logger.info(f"Loading latest model '{MODEL_NAME}' from MLflow")
 
     try:
-        # Load the production model
-        model_uri = f"models:/{MODEL_NAME}/Production"
+        model_uri = f"models:/{MODEL_NAME}/latest"
         model = mlflow.sklearn.load_model(model_uri)
-        logger.info("Model loaded successfully from Production stage")
-        return model, "Production"
+        logger.info("Latest model loaded successfully")
+        return model, "latest"
     except Exception as e:
-        logger.warning(f"Failed to load production model: {e}")
-        # Fallback to latest version
-        try:
-            model_uri = f"models:/{MODEL_NAME}/latest"
-            model = mlflow.sklearn.load_model(model_uri)
-            logger.info("Loaded latest model version")
-            return model, "latest"
-        except Exception as e2:
-            logger.error(f"Failed to load any model: {e2}")
-            raise
+        logger.error(f"Failed to load model: {e}")
+        raise
 
 
 def generate_random_iris_data(n_samples=10):
