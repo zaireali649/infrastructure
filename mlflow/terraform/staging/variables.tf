@@ -20,7 +20,7 @@ variable "bucket_name_suffix" {
 variable "mlflow_version" {
   description = "MLflow version for the tracking server"
   type        = string
-  default     = "3.0"
+  default     = "3.0.0"
 }
 
 variable "automatic_model_registration" {
