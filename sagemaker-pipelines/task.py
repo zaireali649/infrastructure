@@ -44,7 +44,7 @@ def setup_project():
     print("\nSetting up inference dependencies...")
     run_command(["uv", "sync"], cwd="src/inference")
 
-    print("✅ Project setup complete!")
+    print("Project setup complete!")
 
 
 def lint_code():
@@ -63,7 +63,7 @@ def lint_code():
     run_command(["uv", "run", "isort", "app/"], cwd="src/inference", check=False)
     run_command(["uv", "run", "flake8", "app/"], cwd="src/inference", check=False)
 
-    print("✅ Code linting complete!")
+    print("Code linting complete!")
 
 
 def test_code():
@@ -82,7 +82,7 @@ def test_code():
         ["uv", "run", "pytest", "tests/", "-v"], cwd="src/inference", check=False
     )
 
-    print("✅ Tests complete!")
+    print("Tests complete!")
 
 
 def build_images(service: Optional[str] = None):
@@ -100,9 +100,9 @@ def build_images(service: Optional[str] = None):
             cwd=f"src/{svc}",
         )
 
-        print(f"✅ Built {image_tag}")
+        print(f"Built {image_tag}")
 
-    print("✅ Docker images built successfully!")
+    print("Docker images built successfully!")
 
 
 def push_images(environment: str = "staging"):
@@ -112,7 +112,7 @@ def push_images(environment: str = "staging"):
     # Use the build script
     run_command(["./scripts/build_push_ecr.sh"], cwd=".")
 
-    print("✅ Images pushed to ECR!")
+    print("Images pushed to ECR!")
 
 
 def deploy_infrastructure(environment: str = "staging", auto_approve: bool = False):
@@ -133,7 +133,7 @@ def deploy_infrastructure(environment: str = "staging", auto_approve: bool = Fal
     else:
         print(f"\nTo apply changes, run: cd {terraform_dir} && terraform apply")
 
-    print("✅ Infrastructure deployment planned!")
+    print("Infrastructure deployment planned!")
 
 
 def trigger_pipeline(pipeline_type: str, environment: str = "staging"):
@@ -152,7 +152,7 @@ def trigger_pipeline(pipeline_type: str, environment: str = "staging"):
         ]
     )
 
-    print(f"✅ {pipeline_type} pipeline parameters generated!")
+    print(f"{pipeline_type} pipeline parameters generated!")
     print("Use the generated JSON file with AWS CLI or boto3 to trigger execution")
 
 
@@ -175,7 +175,7 @@ def cleanup_resources(environment: str = "staging"):
 
     run_command(["terraform", "destroy"], cwd=terraform_dir)
 
-    print("✅ Resources cleaned up!")
+    print("Resources cleaned up!")
 
 
 def validate_config(environment: str = "staging"):
@@ -188,7 +188,7 @@ def validate_config(environment: str = "staging"):
     run_command(["terraform", "validate"], cwd=terraform_dir)
     run_command(["terraform", "fmt", "-check"], cwd=terraform_dir)
 
-    print("✅ Configuration validation complete!")
+    print("Configuration validation complete!")
 
 
 def generate_docs():
@@ -213,7 +213,7 @@ def generate_docs():
         check=False,
     )
 
-    print("✅ Documentation generated!")
+    print("Documentation generated!")
 
 
 def main():
@@ -314,10 +314,10 @@ def main():
         elif args.command == "docs":
             generate_docs()
     except KeyboardInterrupt:
-        print("\n❌ Task interrupted by user")
+        print("\nTask interrupted by user")
         sys.exit(1)
     except Exception as e:
-        print(f"❌ Task failed: {e}")
+        print(f"Task failed: {e}")
         sys.exit(1)
 
 

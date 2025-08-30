@@ -81,19 +81,19 @@ jobs:
       run: |
         # Initialize with backend configuration from secrets if provided
         if [ -n "${{ secrets.TF_BACKEND_BUCKET }}" ]; then
-          echo "🗄️ Using S3 backend: ${{ secrets.TF_BACKEND_BUCKET }}"
+          echo "Using S3 backend: ${{ secrets.TF_BACKEND_BUCKET }}"
           # Convert sagemaker-studio/terraform/staging to sagemaker-studio/staging
           state_key=$(echo "${{ inputs.terraform-working-directory }}" | sed 's|/terraform||')
-          echo "📂 State key: ${state_key}/terraform.tfstate"
-          echo "🌍 Region: ${{ env.AWS_REGION }}"
+          echo "State key: ${state_key}/terraform.tfstate"
+          echo "Region: ${{ env.AWS_REGION }}"
           
           terraform init \
             -backend-config="bucket=${{ secrets.TF_BACKEND_BUCKET }}" \
             -backend-config="key=${state_key}/terraform.tfstate" \
             -backend-config="region=${{ env.AWS_REGION }}"
         else
-          echo "⚠️ Using local backend (not recommended for production)"
-          echo "💡 Set TF_BACKEND_BUCKET secret for remote state management"
+          echo "WARNING: Using local backend (not recommended for production)"
+          echo "Set TF_BACKEND_BUCKET secret for remote state management"
           terraform init -migrate-state -input=false || terraform init
         fi
     
@@ -115,9 +115,9 @@ jobs:
         # Set subnet IDs (optional - will auto-discover from VPC if not provided)
         if [ -n "${{ secrets.SUBNET_IDS }}" ]; then
           export TF_VAR_subnet_ids='[${{ secrets.SUBNET_IDS }}]'
-          echo "ℹ️ Using provided subnet IDs from secret"
+          echo "Using provided subnet IDs from secret"
         else
-          echo "ℹ️ Subnet IDs not provided - will auto-discover from VPC"
+          echo "Subnet IDs not provided - will auto-discover from VPC"
         fi
         
         # Save variables to environment file for next step
@@ -133,7 +133,7 @@ jobs:
     - name: Terraform Plan
       id: plan
       run: |
-        echo "🔍 Planning ${{ inputs.environment }} deployment..."
+        echo "Planning ${{ inputs.environment }} deployment..."
         terraform plan -no-color -input=false -out=tfplan
     
     - name: Create Plan Summary
@@ -142,30 +142,30 @@ jobs:
       run: |
         # Create a summary of the plan results
         if [ "${{ steps.fmt.outcome }}" = "success" ]; then
-          fmt_status="✅"
+          fmt_status="PASS"
         else
-          fmt_status="❌"
+          fmt_status="FAIL"
         fi
         
         if [ "${{ steps.init.outcome }}" = "success" ]; then
-          init_status="✅"
+          init_status="PASS"
         else
-          init_status="❌"
+          init_status="FAIL"
         fi
         
         if [ "${{ steps.validate.outcome }}" = "success" ]; then
-          validate_status="✅"
+          validate_status="PASS"
         else
-          validate_status="❌"
+          validate_status="FAIL"
         fi
         
         if [ "${{ steps.plan.outcome }}" = "success" ]; then
-          plan_status="✅"
+          plan_status="PASS"
         else
-          plan_status="❌"
+          plan_status="FAIL"
         fi
         
-        summary="## 📋 ${{ inputs.environment }} Plan Results
+        summary="## ${{ inputs.environment }} Plan Results
         
         - **Format Check**: ${fmt_status}
         - **Initialization**: ${init_status}

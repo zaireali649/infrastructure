@@ -80,18 +80,18 @@ jobs:
       run: |
         # Initialize with backend configuration from secrets if provided
         if [ -n "${{ secrets.TF_BACKEND_BUCKET }}" ]; then
-          echo "🗄️ Using S3 backend: ${{ secrets.TF_BACKEND_BUCKET }}"
+          echo "Using S3 backend: ${{ secrets.TF_BACKEND_BUCKET }}"
           # Convert sagemaker-studio/terraform/staging to sagemaker-studio/staging
           state_key=$(echo "${{ inputs.terraform-working-directory }}" | sed 's|/terraform||')
-          echo "📂 State key: ${state_key}/terraform.tfstate"
-          echo "🌍 Region: ${{ env.AWS_REGION }}"
+          echo "State key: ${state_key}/terraform.tfstate"
+          echo "Region: ${{ env.AWS_REGION }}"
           
           terraform init \
             -backend-config="bucket=${{ secrets.TF_BACKEND_BUCKET }}" \
             -backend-config="key=${state_key}/terraform.tfstate" \
             -backend-config="region=${{ env.AWS_REGION }}"
         else
-          echo "⚠️ Using local backend (not recommended for production)"
+          echo "WARNING: Using local backend (not recommended for production)"
           terraform init -migrate-state -input=false || terraform init
         fi
     
@@ -109,9 +109,9 @@ jobs:
         # Set subnet IDs (optional - will auto-discover from VPC if not provided)
         if [ -n "${{ secrets.SUBNET_IDS }}" ]; then
           export TF_VAR_subnet_ids='[${{ secrets.SUBNET_IDS }}]'
-          echo "ℹ️ Using provided subnet IDs from secret"
+          echo "Using provided subnet IDs from secret"
         else
-          echo "ℹ️ Subnet IDs not provided - will auto-discover from VPC"
+          echo "Subnet IDs not provided - will auto-discover from VPC"
         fi
         
         # Save variables to environment file for next step
@@ -126,21 +126,21 @@ jobs:
     
     - name: Pre-destroy Check
       run: |
-        echo "🔥 Starting ${{ inputs.environment }} DESTROY operation..."
-        echo "⚠️ WARNING: This will permanently delete all resources!"
-        echo "📊 Configuration:"
+        echo "Starting ${{ inputs.environment }} DESTROY operation..."
+        echo "WARNING: This will permanently delete all resources!"
+        echo "Configuration:"
         echo "  - Environment: ${{ inputs.environment }}"
         echo "  - Project: ${{ inputs.project }}"
         echo "  - Region: ${{ env.AWS_REGION }}"
-        echo "  - VPC ID: configured ✓"
-        echo "  - Subnet IDs: configured ✓"
+        echo "  - VPC ID: configured"
+        echo "  - Subnet IDs: configured"
         echo ""
-        echo "⏳ Destroy operation may take 5-20 minutes depending on service..."
+        echo "Destroy operation may take 5-20 minutes depending on service..."
     
     - name: Terraform Plan Destroy
       id: plan
       run: |
-        echo "🔍 Planning ${{ inputs.environment }} destruction..."
+        echo "Planning ${{ inputs.environment }} destruction..."
         terraform plan -destroy -no-color -input=false -out=tfdestroy
     
     - name: Upload Destroy Plan Artifact
@@ -154,8 +154,8 @@ jobs:
     - name: Terraform Destroy
       id: destroy
       run: |
-        echo "🔥 Destroying ${{ inputs.environment }} infrastructure..."
-        echo "⚠️ This operation cannot be undone!"
+        echo "Destroying ${{ inputs.environment }} infrastructure..."
+        echo "WARNING: This operation cannot be undone!"
         
         # Apply the destroy plan
         terraform apply -auto-approve tfdestroy
@@ -163,27 +163,27 @@ jobs:
     - name: Destruction Summary
       if: steps.destroy.outcome == 'success'
       run: |
-        echo "## 🔥 ${{ inputs.environment }} Infrastructure Destroyed!" >> $GITHUB_STEP_SUMMARY
+        echo "## ${{ inputs.environment }} Infrastructure Destroyed!" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 📊 Destruction Details" >> $GITHUB_STEP_SUMMARY
+        echo "### Destruction Details" >> $GITHUB_STEP_SUMMARY
         echo "- **Environment**: \`${{ inputs.environment }}\`" >> $GITHUB_STEP_SUMMARY
         echo "- **Project**: \`${{ inputs.project }}\`" >> $GITHUB_STEP_SUMMARY
         echo "- **Region**: \`${{ env.AWS_REGION }}\`" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### ⚠️ Important Notes" >> $GITHUB_STEP_SUMMARY
+        echo "### Important Notes" >> $GITHUB_STEP_SUMMARY
         echo "- All resources have been permanently deleted" >> $GITHUB_STEP_SUMMARY
         echo "- Terraform state has been updated to reflect the destruction" >> $GITHUB_STEP_SUMMARY
         echo "- Data stored in deleted resources is not recoverable" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 🔗 Quick Links" >> $GITHUB_STEP_SUMMARY
+        echo "### Quick Links" >> $GITHUB_STEP_SUMMARY
         echo "- [AWS Console](https://console.aws.amazon.com/)" >> $GITHUB_STEP_SUMMARY
     
     - name: Cleanup on Failure
       if: failure()
       run: |
-        echo "❌ Destroy operation failed!" >> $GITHUB_STEP_SUMMARY
+        echo "ERROR: Destroy operation failed!" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 🛠️ Troubleshooting" >> $GITHUB_STEP_SUMMARY
+        echo "### Troubleshooting" >> $GITHUB_STEP_SUMMARY
         echo "- Check the logs above for specific error messages" >> $GITHUB_STEP_SUMMARY
         echo "- Some resources may have dependencies that prevent deletion" >> $GITHUB_STEP_SUMMARY
         echo "- Manual cleanup may be required via AWS Console" >> $GITHUB_STEP_SUMMARY

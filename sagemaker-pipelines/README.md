@@ -2,7 +2,7 @@
 
 Production-ready ML pipelines using SageMaker with MLflow tracking and Kafka integration for real-time predictions.
 
-## 🏗️ Architecture
+## Architecture
 
 This project implements a complete ML platform with:
 
@@ -11,7 +11,7 @@ This project implements a complete ML platform with:
 - **Infrastructure as Code**: Terraform modules for reproducible deployments
 - **Containerized Applications**: Docker containers with uv dependency management
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 sagemaker-pipelines/
@@ -52,7 +52,7 @@ sagemaker-pipelines/
 └── README.md                   # This file
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Prerequisites
 
@@ -137,7 +137,7 @@ aws sagemaker start-pipeline-execution \
   --cli-input-json file://parameters/training-staging-*.json
 ```
 
-## 🔧 Configuration
+## Configuration
 
 ### Training Pipeline
 
@@ -207,7 +207,7 @@ isort app/
 flake8 app/
 ```
 
-## 🔄 CI/CD Workflow
+## CI/CD Workflow
 
 1. **Code Changes**: Push to feature branch
 2. **Build Images**: `./scripts/build_push_ecr.sh` in CI
@@ -216,7 +216,7 @@ flake8 app/
 5. **Test**: Execute pipeline with test data
 6. **Monitor**: Check CloudWatch logs and MLflow experiments
 
-## 📊 Monitoring
+## Monitoring
 
 ### CloudWatch Logs
 
@@ -236,14 +236,14 @@ flake8 app/
 - Consumer lag: Check downstream consumer performance
 - Error rates: Monitor failed message deliveries
 
-## 🔒 Security
+## Security
 
 - **IAM Roles**: Principle of least privilege for each service
 - **VPC**: Network isolation for SageMaker jobs
 - **Encryption**: Data encrypted in transit and at rest
 - **Container Security**: Non-root users and minimal base images
 
-## 🌍 Multi-Environment Support
+## Multi-Environment Support
 
 The project supports multiple environments:
 
@@ -298,6 +298,6 @@ python -c "from src.inference.app.kafka_io import KafkaHealthChecker; print(Kafk
 4. Update documentation
 5. Submit pull request
 
-## 📄 License
+## License
 
 MIT License - see LICENSE file for details.

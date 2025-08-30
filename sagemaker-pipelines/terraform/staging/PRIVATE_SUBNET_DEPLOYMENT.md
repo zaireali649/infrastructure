@@ -6,10 +6,10 @@ This guide covers deploying SageMaker pipelines in private subnets for enhanced 
 
 Private subnet deployment ensures that your ML training and inference jobs run without direct internet access, providing:
 
-- ✅ **Enhanced Security**: No direct internet exposure
-- ✅ **Compliance**: Meets strict network isolation requirements  
-- ✅ **Data Protection**: All traffic stays within your VPC
-- ✅ **Audit Trail**: Centralized network monitoring
+- **Enhanced Security**: No direct internet exposure
+- **Compliance**: Meets strict network isolation requirements  
+- **Data Protection**: All traffic stays within your VPC
+- **Audit Trail**: Centralized network monitoring
 
 ## Prerequisites
 
@@ -288,11 +288,11 @@ nslookup s3.us-east-1.amazonaws.com
 
 Private subnet deployment provides:
 
-- 🔒 **Network Isolation**: Jobs can't access internet directly
-- 🛡️ **Attack Surface Reduction**: No public IP addresses
-- 📊 **Traffic Monitoring**: All traffic flows through VPC
-- 🔍 **Audit Compliance**: Meets strict security requirements
-- 🏢 **Enterprise Ready**: Suitable for regulated industries
+- **Network Isolation**: Jobs can't access internet directly
+- **Attack Surface Reduction**: No public IP addresses
+- **Traffic Monitoring**: All traffic flows through VPC
+- **Audit Compliance**: Meets strict security requirements
+- **Enterprise Ready**: Suitable for regulated industries
 
 ## Cost Considerations
 

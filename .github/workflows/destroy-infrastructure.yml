@@ -33,11 +33,11 @@ jobs:
     - name: Validate Confirmation
       run: |
         if [ "${{ github.event.inputs.confirm_destruction }}" != "DESTROY" ]; then
-          echo "❌ Destruction not confirmed. You must type 'DESTROY' to proceed."
-          echo "⚠️ Current input: '${{ github.event.inputs.confirm_destruction }}'"
+          echo "ERROR: Destruction not confirmed. You must type 'DESTROY' to proceed."
+          echo "Current input: '${{ github.event.inputs.confirm_destruction }}'"
           exit 1
         fi
-        echo "✅ Destruction confirmed"
+        echo "Destruction confirmed"
     
     - name: Parse Services Input
       id: parse
@@ -49,26 +49,26 @@ jobs:
           services="sagemaker-pipelines,mlflow,sagemaker-studio"
         fi
         
-        echo "🎯 Services to destroy: $services"
+        echo "Services to destroy: $services"
         
         # Check each service
         if echo "$services" | grep -q "sagemaker-pipelines"; then
           echo "destroy-sagemaker-pipelines=true" >> $GITHUB_OUTPUT
-          echo "🔥 Will destroy: SageMaker Pipelines"
+          echo "Will destroy: SageMaker Pipelines"
         else
           echo "destroy-sagemaker-pipelines=false" >> $GITHUB_OUTPUT
         fi
         
         if echo "$services" | grep -q "mlflow"; then
           echo "destroy-mlflow=true" >> $GITHUB_OUTPUT
-          echo "🔥 Will destroy: MLflow"
+          echo "Will destroy: MLflow"
         else
           echo "destroy-mlflow=false" >> $GITHUB_OUTPUT
         fi
         
         if echo "$services" | grep -q "sagemaker-studio"; then
           echo "destroy-sagemaker-studio=true" >> $GITHUB_OUTPUT
-          echo "🔥 Will destroy: SageMaker Studio"
+          echo "Will destroy: SageMaker Studio"
         else
           echo "destroy-sagemaker-studio=false" >> $GITHUB_OUTPUT
         fi
@@ -181,48 +181,48 @@ jobs:
     steps:
     - name: Generate Summary
       run: |
-        echo "## 🔥 Infrastructure Destruction Summary" >> $GITHUB_STEP_SUMMARY
+        echo "## Infrastructure Destruction Summary" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         
         # SageMaker Pipelines
         if [ "${{ needs.validate-input.outputs.destroy-sagemaker-pipelines }}" = "true" ]; then
           if [ "${{ needs.destroy-sagemaker-pipelines.result }}" = "success" ]; then
-            echo "- ✅ **SageMaker Pipelines**: Successfully destroyed" >> $GITHUB_STEP_SUMMARY
+            echo "- SUCCESS **SageMaker Pipelines**: Successfully destroyed" >> $GITHUB_STEP_SUMMARY
           else
-            echo "- ❌ **SageMaker Pipelines**: Destruction failed" >> $GITHUB_STEP_SUMMARY
+            echo "- ERROR **SageMaker Pipelines**: Destruction failed" >> $GITHUB_STEP_SUMMARY
           fi
         else
-          echo "- ⏭️ **SageMaker Pipelines**: Skipped" >> $GITHUB_STEP_SUMMARY
+          echo "- SKIPPED **SageMaker Pipelines**: Skipped" >> $GITHUB_STEP_SUMMARY
         fi
         
         # MLflow
         if [ "${{ needs.validate-input.outputs.destroy-mlflow }}" = "true" ]; then
           if [ "${{ needs.destroy-mlflow.result }}" = "success" ]; then
-            echo "- ✅ **MLflow**: Successfully destroyed" >> $GITHUB_STEP_SUMMARY
+            echo "- SUCCESS **MLflow**: Successfully destroyed" >> $GITHUB_STEP_SUMMARY
           else
-            echo "- ❌ **MLflow**: Destruction failed" >> $GITHUB_STEP_SUMMARY
+            echo "- ERROR **MLflow**: Destruction failed" >> $GITHUB_STEP_SUMMARY
           fi
         else
-          echo "- ⏭️ **MLflow**: Skipped" >> $GITHUB_STEP_SUMMARY
+          echo "- SKIPPED **MLflow**: Skipped" >> $GITHUB_STEP_SUMMARY
         fi
         
         # SageMaker Studio
         if [ "${{ needs.validate-input.outputs.destroy-sagemaker-studio }}" = "true" ]; then
           if [ "${{ needs.destroy-sagemaker-studio.result }}" = "success" ]; then
-            echo "- ✅ **SageMaker Studio**: Successfully destroyed" >> $GITHUB_STEP_SUMMARY
+            echo "- SUCCESS **SageMaker Studio**: Successfully destroyed" >> $GITHUB_STEP_SUMMARY
           else
-            echo "- ❌ **SageMaker Studio**: Destruction failed" >> $GITHUB_STEP_SUMMARY
+            echo "- ERROR **SageMaker Studio**: Destruction failed" >> $GITHUB_STEP_SUMMARY
           fi
         else
-          echo "- ⏭️ **SageMaker Studio**: Skipped" >> $GITHUB_STEP_SUMMARY
+          echo "- SKIPPED **SageMaker Studio**: Skipped" >> $GITHUB_STEP_SUMMARY
         fi
         
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### ⚠️ Important Notes" >> $GITHUB_STEP_SUMMARY
+        echo "### Important Notes" >> $GITHUB_STEP_SUMMARY
         echo "- All destroyed resources and their data are permanently deleted" >> $GITHUB_STEP_SUMMARY
         echo "- Terraform state files have been updated to reflect the changes" >> $GITHUB_STEP_SUMMARY
         echo "- If any destruction failed, manual cleanup may be required" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 🔗 Quick Links" >> $GITHUB_STEP_SUMMARY
+        echo "### Quick Links" >> $GITHUB_STEP_SUMMARY
         echo "- [AWS Console](https://console.aws.amazon.com/)" >> $GITHUB_STEP_SUMMARY
         echo "- [GitHub Actions](https://github.com/${{ github.repository }}/actions)" >> $GITHUB_STEP_SUMMARY

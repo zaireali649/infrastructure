@@ -2,7 +2,7 @@
 
 This directory contains the Terraform configuration for deploying SageMaker Studio in the staging environment for user **zali**.
 
-## 🏗️ Architecture
+## Architecture
 
 This configuration deploys:
 - **SageMaker Studio Domain** with IAM authentication
@@ -11,19 +11,19 @@ This configuration deploys:
 - **S3 Bucket** for ML artifacts and model storage
 - **VPC Integration** for secure networking
 
-## 📋 Prerequisites
+## Prerequisites
 
 ### AWS Infrastructure
-- ✅ AWS Account with appropriate permissions
-- ✅ VPC with private subnets (tagged as `Type: private`)
-- ✅ VPC named `staging-vpc` (or update `vpc_name` in terraform.tfvars)
-- ✅ Internet connectivity (NAT Gateway or VPC Endpoints)
+- AWS Account with appropriate permissions
+- VPC with private subnets (tagged as `Type: private`)
+- VPC named `staging-vpc` (or update `vpc_name` in terraform.tfvars)
+- Internet connectivity (NAT Gateway or VPC Endpoints)
 
 ### GitHub Repository Setup
-- ✅ Repository secrets configured (see [GitHub Secrets](#github-secrets) section)
-- ✅ AWS OIDC provider configured (recommended) or AWS access keys
+- Repository secrets configured (see [GitHub Secrets](#github-secrets) section)
+- AWS OIDC provider configured (recommended) or AWS access keys
 
-## 🚀 Deployment Methods
+## Deployment Methods
 
 ### Method 1: GitHub Actions (Recommended)
 
@@ -62,7 +62,7 @@ terraform apply
 terraform destroy
 ```
 
-## ⚙️ Configuration
+## Configuration
 
 ### Current Configuration (terraform.tfvars)
 
@@ -105,7 +105,7 @@ jupyter_instance_type = "ml.m5.large"
 app_network_access_type = "VpcOnly"
 ```
 
-## 🔐 GitHub Secrets
+## GitHub Secrets
 
 Configure these repository secrets for GitHub Actions deployment:
 
@@ -136,7 +136,7 @@ AWS_SECRET_ACCESS_KEY: your-secret-key
 
 **Note**: For enhanced security in production, consider using OIDC authentication instead.
 
-## 📦 Outputs
+## Outputs
 
 After successful deployment, you'll get:
 
@@ -159,7 +159,7 @@ DomainId       = "d-xxxxxxxxxxxx"
 StudioUserName = "zali"
 ```
 
-## 🔗 Accessing SageMaker Studio
+## Accessing SageMaker Studio
 
 ### Via AWS Console
 1. Go to [SageMaker Console](https://console.aws.amazon.com/sagemaker/)
@@ -182,7 +182,7 @@ aws sagemaker create-presigned-domain-url \
 ### Direct URL
 Use the `sagemaker_domain_url` output to access Studio directly.
 
-## 🏷️ Resource Naming Convention
+## Resource Naming Convention
 
 All resources follow this naming pattern:
 
@@ -193,7 +193,7 @@ All resources follow this naming pattern:
 | S3 Bucket | `{project}-{env}-ml-bucket-{suffix}` | `sagemaker-studio-staging-ml-bucket-zali-staging` |
 | User Profile | `{user}` | `zali` |
 
-## 🏷️ Resource Tags
+## Resource Tags
 
 All resources are tagged with:
 
@@ -206,7 +206,7 @@ Repository  = "infrastructure"
 Team        = "ML-Engineering"
 ```
 
-## 📊 Cost Optimization
+## Cost Optimization
 
 Current configuration is optimized for staging costs:
 
@@ -221,7 +221,7 @@ Current configuration is optimized for staging costs:
 - S3 storage: ~$5-20 (based on data volume)
 - **Total**: ~$55-120/month (usage-dependent)
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -282,7 +282,7 @@ aws iam get-role --role-name $(terraform output -raw sagemaker_execution_role_na
 aws s3 ls s3://$(terraform output -raw ml_artifacts_bucket_name)
 ```
 
-## 🔄 State Management
+## State Management
 
 ### Local State (Default)
 Terraform state is stored locally. **Not recommended for team environments.**
@@ -302,21 +302,21 @@ terraform {
 
 Set `TF_BACKEND_BUCKET` secret in GitHub for automatic configuration.
 
-## 🔐 Security Considerations
+## Security Considerations
 
 ### Current Security Posture
-- ✅ IAM-based authentication
-- ✅ VPC deployment with private subnets
-- ✅ S3 encryption at rest
-- ✅ Least privilege IAM policies
-- ✅ Public access blocked on S3
+- IAM-based authentication
+- VPC deployment with private subnets
+- S3 encryption at rest
+- Least privilege IAM policies
+- Public access blocked on S3
 
 ### Production Recommendations
-- 🔒 Switch to `app_network_access_type = "VpcOnly"`
-- 🔒 Enable VPC Flow Logs
-- 🔒 Use AWS SSO for user authentication
-- 🔒 Implement S3 bucket policies
-- 🔒 Enable CloudTrail logging
+- Switch to `app_network_access_type = "VpcOnly"`
+- Enable VPC Flow Logs
+- Use AWS SSO for user authentication
+- Implement S3 bucket policies
+- Enable CloudTrail logging
 
 ## 📚 Next Steps
 

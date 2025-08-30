@@ -11,37 +11,37 @@ Modified the SageMaker Pipelines infrastructure to use existing ECR repositories
 **Before**: Script would create ECR repositories if they didn't exist
 **After**: Script verifies ECR repositories exist and fails with helpful error message if they don't
 
-- ✅ Replaced `create_ecr_repo()` function with `verify_ecr_repo()` function
-- ✅ Updated main logic to verify instead of create repositories
-- ✅ Updated help text to clarify prerequisites
-- ✅ Added clear error messages with creation commands
+- Replaced `create_ecr_repo()` function with `verify_ecr_repo()` function
+- Updated main logic to verify instead of create repositories
+- Updated help text to clarify prerequisites
+- Added clear error messages with creation commands
 
 ### 2. GitHub Workflow (`.github/workflows/deploy-sagemaker-pipelines.yml`)
 
 **Before**: Workflow would create ECR repositories during CI/CD if they didn't exist
 **After**: Workflow verifies ECR repositories exist and fails with helpful error message if they don't
 
-- ✅ Replaced ECR creation logic with verification logic
-- ✅ Added clear error messages for missing repositories
+- Replaced ECR creation logic with verification logic
+- Added clear error messages for missing repositories
 
 ### 3. Terraform Module (`terraform/module/sagemaker-pipelines/`)
 
-**Status**: ✅ No changes needed
+**Status**: No changes needed
 - The Terraform module already correctly expects existing ECR repository URIs as input variables
 - No ECR resources were being created in the module itself
 
 ### 4. Documentation Updates
 
 **Module README** (`terraform/module/sagemaker-pipelines/README.md`):
-- ✅ Clarified that ECR repositories must exist before using the module
-- ✅ Added section explaining ECR repository management approach
-- ✅ Updated prerequisites section
+- Clarified that ECR repositories must exist before using the module
+- Added section explaining ECR repository management approach
+- Updated prerequisites section
 
 **Main README** (`sagemaker-pipelines/README.md`):
-- ✅ Added ECR repository creation step to Quick Start guide
-- ✅ Updated prerequisite list to include ECR repositories
-- ✅ Added troubleshooting section for missing ECR repositories
-- ✅ Provided CLI commands for creating repositories
+- Added ECR repository creation step to Quick Start guide
+- Updated prerequisite list to include ECR repositories
+- Added troubleshooting section for missing ECR repositories
+- Provided CLI commands for creating repositories
 
 ## Prerequisites Now Required
 
