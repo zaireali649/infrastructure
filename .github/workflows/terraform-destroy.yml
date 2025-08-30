@@ -1,4 +1,4 @@
-name: Terraform Plan (Reusable)
+name: Terraform Destroy (Reusable)
 
 on:
   workflow_call:
@@ -45,9 +45,13 @@ env:
   TF_VAR_aws_region: us-east-1
 
 jobs:
-  plan:
-    name: Plan ${{ inputs.environment }}
+  destroy:
+    name: Destroy ${{ inputs.environment }}
     runs-on: ubuntu-latest
+    
+    # Use environment protection for destructive operations
+    environment: 
+      name: ${{ inputs.environment }}
     
     defaults:
       run:
@@ -71,11 +75,6 @@ jobs:
         terraform_version: ${{ env.TERRAFORM_VERSION }}
         terraform_wrapper: false
     
-    - name: Terraform Format Check
-      id: fmt
-      run: terraform fmt -check -recursive
-      continue-on-error: true
-    
     - name: Terraform Init
       id: init
       run: |
@@ -93,13 +92,8 @@ jobs:
             -backend-config="region=${{ env.AWS_REGION }}"
         else
           echo "WARNING: Using local backend (not recommended for production)"
-          echo "Set TF_BACKEND_BUCKET secret for remote state management"
           terraform init -migrate-state -input=false || terraform init
         fi
-    
-    - name: Terraform Validate
-      id: validate
-      run: terraform validate -no-color
     
     - name: Set Variables
       id: vars
@@ -130,61 +124,67 @@ jobs:
           echo "TF_VAR_subnet_ids=${TF_VAR_subnet_ids}" >> $GITHUB_ENV
         fi
     
-    - name: Terraform Plan
+    - name: Pre-destroy Check
+      run: |
+        echo "Starting ${{ inputs.environment }} DESTROY operation..."
+        echo "WARNING: This will permanently delete all resources!"
+        echo "Configuration:"
+        echo "  - Environment: ${{ inputs.environment }}"
+        echo "  - Project: ${{ inputs.project }}"
+        echo "  - Region: ${{ env.AWS_REGION }}"
+        echo "  - VPC ID: configured"
+        echo "  - Subnet IDs: configured"
+        echo ""
+        echo "Destroy operation may take 5-20 minutes depending on service..."
+    
+    - name: Terraform Plan Destroy
       id: plan
       run: |
-        echo "Planning ${{ inputs.environment }} deployment..."
-        terraform plan -no-color -input=false -out=tfplan
+        echo "Planning ${{ inputs.environment }} destruction..."
+        terraform plan -destroy -no-color -input=false -out=tfdestroy
     
-    - name: Create Plan Summary
-      id: summary
-      if: always()
-      run: |
-        # Create a summary of the plan results
-        if [ "${{ steps.fmt.outcome }}" = "success" ]; then
-          fmt_status="PASS"
-        else
-          fmt_status="FAIL"
-        fi
-        
-        if [ "${{ steps.init.outcome }}" = "success" ]; then
-          init_status="PASS"
-        else
-          init_status="FAIL"
-        fi
-        
-        if [ "${{ steps.validate.outcome }}" = "success" ]; then
-          validate_status="PASS"
-        else
-          validate_status="FAIL"
-        fi
-        
-        if [ "${{ steps.plan.outcome }}" = "success" ]; then
-          plan_status="PASS"
-        else
-          plan_status="FAIL"
-        fi
-        
-        summary="## ${{ inputs.environment }} Plan Results
-        
-        - **Format Check**: ${fmt_status}
-        - **Initialization**: ${init_status}
-        - **Validation**: ${validate_status}
-        - **Plan**: ${plan_status}
-        
-        **Environment**: \`${{ inputs.environment }}\`
-        **Project**: \`${{ inputs.project }}\`
-        **Region**: \`us-east-1\`"
-        
-        # Save summary to output
-        echo "summary<<EOF" >> $GITHUB_OUTPUT
-        echo "$summary" >> $GITHUB_OUTPUT
-        echo "EOF" >> $GITHUB_OUTPUT
-    
-    - name: Save Plan Artifact
+    - name: Upload Destroy Plan Artifact
       if: steps.plan.outcome == 'success'
       uses: actions/upload-artifact@v4
       with:
-        name: tfplan-${{ inputs.environment }}
-        path: ${{ inputs.terraform-working-directory }}/tfplan
+        name: tfdestroy-${{ inputs.environment }}
+        path: ${{ inputs.terraform-working-directory }}/tfdestroy
         retention-days: 1
+    
+    - name: Terraform Destroy
+      id: destroy
+      run: |
+        echo "Destroying ${{ inputs.environment }} infrastructure..."
+        echo "WARNING: This operation cannot be undone!"
+        
+        # Apply the destroy plan
+        terraform apply -auto-approve tfdestroy
+    
+    - name: Destruction Summary
+      if: steps.destroy.outcome == 'success'
+      run: |
+        echo "## ${{ inputs.environment }} Infrastructure Destroyed!" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Destruction Details" >> $GITHUB_STEP_SUMMARY
+        echo "- **Environment**: \`${{ inputs.environment }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **Project**: \`${{ inputs.project }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **Region**: \`${{ env.AWS_REGION }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Important Notes" >> $GITHUB_STEP_SUMMARY
+        echo "- All resources have been permanently deleted" >> $GITHUB_STEP_SUMMARY
+        echo "- Terraform state has been updated to reflect the destruction" >> $GITHUB_STEP_SUMMARY
+        echo "- Data stored in deleted resources is not recoverable" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Quick Links" >> $GITHUB_STEP_SUMMARY
+        echo "- [AWS Console](https://console.aws.amazon.com/)" >> $GITHUB_STEP_SUMMARY
+    
+    - name: Cleanup on Failure
+      if: failure()
+      run: |
+        echo "ERROR: Destroy operation failed!" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Troubleshooting" >> $GITHUB_STEP_SUMMARY
+        echo "- Check the logs above for specific error messages" >> $GITHUB_STEP_SUMMARY
+        echo "- Some resources may have dependencies that prevent deletion" >> $GITHUB_STEP_SUMMARY
+        echo "- Manual cleanup may be required via AWS Console" >> $GITHUB_STEP_SUMMARY
+        echo "- Terraform state may be inconsistent - review carefully" >> $GITHUB_STEP_SUMMARY

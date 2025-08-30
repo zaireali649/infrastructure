@@ -263,13 +263,13 @@ with mlflow.start_run():
 
 | Feature | SageMaker Managed | Self-Hosted |
 |---------|-------------------|-------------|
-| **Infrastructure Management** | ✅ Fully managed | ❌ You manage ECS, RDS, ALB |
-| **Scaling** | ✅ Automatic | ❌ Manual configuration |
-| **Maintenance** | ✅ AWS handles updates | ❌ You handle updates |
-| **Security** | ✅ Built-in best practices | ❌ You configure security |
-| **Cost (small scale)** | ✅ Pay per use | ❌ Fixed infrastructure costs |
-| **SageMaker Integration** | ✅ Native integration | ⚠️ Manual configuration |
-| **Customization** | ⚠️ Limited | ✅ Full control |
+| **Infrastructure Management** | Fully managed | You manage ECS, RDS, ALB |
+| **Scaling** | Automatic | Manual configuration |
+| **Maintenance** | AWS handles updates | You handle updates |
+| **Security** | Built-in best practices | You configure security |
+| **Cost (small scale)** | Pay per use | Fixed infrastructure costs |
+| **SageMaker Integration** | Native integration | Manual configuration |
+| **Customization** | Limited | Full control |
 
 ## Cost Optimization
 

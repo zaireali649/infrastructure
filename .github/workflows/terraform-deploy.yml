@@ -80,18 +80,18 @@ jobs:
       run: |
         # Initialize with backend configuration from secrets if provided
         if [ -n "${{ secrets.TF_BACKEND_BUCKET }}" ]; then
-          echo "🗄️ Using S3 backend: ${{ secrets.TF_BACKEND_BUCKET }}"
+          echo "Using S3 backend: ${{ secrets.TF_BACKEND_BUCKET }}"
           # Convert sagemaker-studio/terraform/staging to sagemaker-studio/staging
           state_key=$(echo "${{ inputs.terraform-working-directory }}" | sed 's|/terraform||')
-          echo "📂 State key: ${state_key}/terraform.tfstate"
-          echo "🌍 Region: ${{ env.AWS_REGION }}"
+          echo "State key: ${state_key}/terraform.tfstate"
+          echo "Region: ${{ env.AWS_REGION }}"
           
           terraform init \
             -backend-config="bucket=${{ secrets.TF_BACKEND_BUCKET }}" \
             -backend-config="key=${state_key}/terraform.tfstate" \
             -backend-config="region=${{ env.AWS_REGION }}"
         else
-          echo "⚠️ Using local backend (not recommended for production)"
+          echo "WARNING: Using local backend (not recommended for production)"
           terraform init -migrate-state -input=false || terraform init
         fi
     
@@ -116,9 +116,9 @@ jobs:
         # Set subnet IDs (optional - will auto-discover from VPC if not provided)
         if [ -n "${{ secrets.SUBNET_IDS }}" ]; then
           export TF_VAR_subnet_ids='[${{ secrets.SUBNET_IDS }}]'
-          echo "ℹ️ Using provided subnet IDs from secret"
+          echo "Using provided subnet IDs from secret"
         else
-          echo "ℹ️ Subnet IDs not provided - will auto-discover from VPC"
+          echo "Subnet IDs not provided - will auto-discover from VPC"
         fi
         
         # Save variables to environment file for next step
@@ -133,27 +133,27 @@ jobs:
     
     - name: Pre-deployment Check
       run: |
-        echo "🚀 Starting ${{ inputs.environment }} deployment..."
-        echo "📊 Configuration:"
+        echo "Starting ${{ inputs.environment }} deployment..."
+        echo "Configuration:"
         echo "  - Environment: ${{ inputs.environment }}"
         echo "  - Project: ${{ inputs.project }}"
         echo "  - Region: ${{ env.AWS_REGION }}"
-        echo "  - VPC ID: configured ✓"
-        echo "  - Subnet IDs: configured ✓"
+        echo "  - VPC ID: configured"
+        echo "  - Subnet IDs: configured"
         echo ""
-        echo "⏳ Deployment may take 5-20 minutes depending on service..."
+        echo "Deployment may take 5-20 minutes depending on service..."
     
     - name: Terraform Apply
       id: apply
       run: |
-        echo "🚀 Applying ${{ inputs.environment }} configuration..."
+        echo "Applying ${{ inputs.environment }} configuration..."
         
         # Check if plan file exists, otherwise create a new plan
         if [ -f "tfplan" ]; then
-          echo "📋 Using existing plan file"
+          echo "Using existing plan file"
           terraform apply -auto-approve tfplan
         else
-          echo "📋 Creating new plan and applying"
+          echo "Creating new plan and applying"
           terraform apply -auto-approve
         fi
     
@@ -161,7 +161,7 @@ jobs:
       id: outputs
       if: steps.apply.outcome == 'success'
       run: |
-        echo "🔍 Getting Terraform outputs..."
+        echo "Getting Terraform outputs..."
         
         # Get all outputs as JSON
         terraform output -json > outputs.json
@@ -173,14 +173,14 @@ jobs:
     - name: Deployment Summary
       if: steps.apply.outcome == 'success'
       run: |
-        echo "## 🚀 ${{ inputs.environment }} Deployment Complete!" >> $GITHUB_STEP_SUMMARY
+        echo "## ${{ inputs.environment }} Deployment Complete!" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 📊 Deployment Details" >> $GITHUB_STEP_SUMMARY
+        echo "### Deployment Details" >> $GITHUB_STEP_SUMMARY
         echo "- **Environment**: \`${{ inputs.environment }}\`" >> $GITHUB_STEP_SUMMARY
         echo "- **Project**: \`${{ inputs.project }}\`" >> $GITHUB_STEP_SUMMARY
         echo "- **Region**: \`${{ env.AWS_REGION }}\`" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 🔗 Quick Links" >> $GITHUB_STEP_SUMMARY
+        echo "### Quick Links" >> $GITHUB_STEP_SUMMARY
         echo "- [AWS Console](https://console.aws.amazon.com/)" >> $GITHUB_STEP_SUMMARY
         echo "- [Terraform Outputs](outputs.json)" >> $GITHUB_STEP_SUMMARY
     

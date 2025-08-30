@@ -101,27 +101,27 @@ output "sagemaker_studio_integration" {
 output "deployment_summary" {
   description = "Deployment summary and next steps"
   value = <<-EOT
-    🎉 SageMaker Managed MLflow Deployment Complete!
+    SageMaker Managed MLflow Deployment Complete!
     
-    📊 Tracking Server: ${module.mlflow.tracking_server_name}
-    🌐 Web UI/API: ${module.mlflow.tracking_server_url}
-    🪣 Artifacts: ${module.mlflow.artifact_store_uri}
-    🔧 MLflow Version: ${module.mlflow.mlflow_version}
-    🤖 Auto Registration: Enabled
+    Tracking Server: ${module.mlflow.tracking_server_name}
+    Web UI/API: ${module.mlflow.tracking_server_url}
+    Artifacts: ${module.mlflow.artifact_store_uri}
+    MLflow Version: ${module.mlflow.mlflow_version}
+    Auto Registration: Enabled
     
-    ✨ Benefits of Managed MLflow:
-    • Fully managed - No infrastructure to maintain
-    • Auto-scaling - Scales automatically with usage
-    • SageMaker Integration - Works seamlessly with SageMaker Studio
-    • Cost-effective - Pay only for what you use
+    Benefits of Managed MLflow:
+    - Fully managed - No infrastructure to maintain
+    - Auto-scaling - Scales automatically with usage
+    - SageMaker Integration - Works seamlessly with SageMaker Studio
+    - Cost-effective - Pay only for what you use
     
-    🚀 Next Steps:
+    Next Steps:
     1. Access MLflow UI through SageMaker Studio or directly via URL
     2. Configure your ML clients to use the tracking URI
     3. Start logging experiments and models
     4. Leverage automatic model registration for MLOps workflows
     
-    💡 Pro Tip: The tracking server is automatically available in SageMaker Studio!
+    Pro Tip: The tracking server is automatically available in SageMaker Studio!
   EOT
 }
 

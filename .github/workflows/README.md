@@ -4,7 +4,7 @@ This directory contains the GitHub Actions workflows for deploying and managing 
 
 ## Workflow Structure
 
-### 📁 Workflow Files (3 Total)
+### Workflow Files (3 Total)
 
 | Workflow | Purpose | Type |
 |----------|---------|------|
@@ -57,11 +57,11 @@ Configure these secrets in your GitHub repository:
 
 | Secret | Description | Required |
 |--------|-------------|----------|
-| `AWS_ACCESS_KEY_ID` | AWS access key | ✅ Yes |
-| `AWS_SECRET_ACCESS_KEY` | AWS secret key | ✅ Yes |
-| `TF_BACKEND_BUCKET` | S3 bucket for Terraform state | 🔶 Recommended |
-| `BUCKET_NAME_SUFFIX` | Unique suffix for resource naming | 🔶 Recommended |
-| `SUBNET_IDS` | Comma-separated subnet IDs | ⚪ Optional |
+| `AWS_ACCESS_KEY_ID` | AWS access key | Yes |
+| `AWS_SECRET_ACCESS_KEY` | AWS secret key | Yes |
+| `TF_BACKEND_BUCKET` | S3 bucket for Terraform state | Recommended |
+| `BUCKET_NAME_SUFFIX` | Unique suffix for resource naming | Recommended |
+| `SUBNET_IDS` | Comma-separated subnet IDs | Optional |
 
 ## Usage
 

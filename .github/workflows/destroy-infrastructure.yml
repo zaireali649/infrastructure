@@ -1,0 +1,228 @@
+name: Destroy Infrastructure
+
+on:
+  workflow_dispatch:
+    inputs:
+      services:
+        description: 'Services to destroy (comma-separated: sagemaker-pipelines,mlflow,sagemaker-studio or "all")'
+        required: true
+        default: 'all'
+        type: string
+      confirm_destruction:
+        description: 'Type "DESTROY" to confirm you want to permanently delete infrastructure'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  validate-input:
+    name: Validate Destruction Request
+    runs-on: ubuntu-latest
+    outputs:
+      destroy-sagemaker-pipelines: ${{ steps.parse.outputs.destroy-sagemaker-pipelines }}
+      destroy-mlflow: ${{ steps.parse.outputs.destroy-mlflow }}
+      destroy-sagemaker-studio: ${{ steps.parse.outputs.destroy-sagemaker-studio }}
+    
+    steps:
+    - name: Validate Confirmation
+      run: |
+        if [ "${{ github.event.inputs.confirm_destruction }}" != "DESTROY" ]; then
+          echo "ERROR: Destruction not confirmed. You must type 'DESTROY' to proceed."
+          echo "Current input: '${{ github.event.inputs.confirm_destruction }}'"
+          exit 1
+        fi
+        echo "Destruction confirmed"
+    
+    - name: Parse Services Input
+      id: parse
+      run: |
+        services="${{ github.event.inputs.services }}"
+        
+        # Default to all services if input is "all"
+        if [ "$services" = "all" ]; then
+          services="sagemaker-pipelines,mlflow,sagemaker-studio"
+        fi
+        
+        echo "Services to destroy: $services"
+        
+        # Check each service
+        if echo "$services" | grep -q "sagemaker-pipelines"; then
+          echo "destroy-sagemaker-pipelines=true" >> $GITHUB_OUTPUT
+          echo "Will destroy: SageMaker Pipelines"
+        else
+          echo "destroy-sagemaker-pipelines=false" >> $GITHUB_OUTPUT
+        fi
+        
+        if echo "$services" | grep -q "mlflow"; then
+          echo "destroy-mlflow=true" >> $GITHUB_OUTPUT
+          echo "Will destroy: MLflow"
+        else
+          echo "destroy-mlflow=false" >> $GITHUB_OUTPUT
+        fi
+        
+        if echo "$services" | grep -q "sagemaker-studio"; then
+          echo "destroy-sagemaker-studio=true" >> $GITHUB_OUTPUT
+          echo "Will destroy: SageMaker Studio"
+        else
+          echo "destroy-sagemaker-studio=false" >> $GITHUB_OUTPUT
+        fi
+
+  # Plan destroy operations first to preview changes
+  plan-destroy-sagemaker-pipelines:
+    name: Plan Destroy SageMaker Pipelines
+    uses: ./.github/workflows/terraform-plan.yml
+    secrets: inherit
+    needs: validate-input
+    if: needs.validate-input.outputs.destroy-sagemaker-pipelines == 'true'
+    with:
+      environment: "sagemaker-pipelines-staging"
+      terraform-environment: staging
+      terraform-working-directory: "sagemaker-pipelines/terraform/staging"
+      aws-environment: staging
+      project: ml
+      aws-role-name: mlops-github
+
+  plan-destroy-mlflow:
+    name: Plan Destroy MLflow
+    uses: ./.github/workflows/terraform-plan.yml
+    secrets: inherit
+    needs: validate-input
+    if: needs.validate-input.outputs.destroy-mlflow == 'true'
+    with:
+      environment: "mlflow-staging"
+      terraform-environment: staging
+      terraform-working-directory: "mlflow/terraform/staging"
+      aws-environment: staging
+      project: ml
+      aws-role-name: mlops-github
+
+  plan-destroy-sagemaker-studio:
+    name: Plan Destroy SageMaker Studio
+    uses: ./.github/workflows/terraform-plan.yml
+    secrets: inherit
+    needs: validate-input
+    if: needs.validate-input.outputs.destroy-sagemaker-studio == 'true'
+    with:
+      environment: "sagemaker-studio-staging"
+      terraform-environment: staging
+      terraform-working-directory: "sagemaker-studio/terraform/staging"
+      aws-environment: staging
+      project: ml
+      aws-role-name: mlops-github
+
+  # Destroy operations - order matters due to dependencies
+  # Destroy SageMaker Pipelines first (depends on SageMaker Studio)
+  destroy-sagemaker-pipelines:
+    name: Destroy SageMaker Pipelines
+    uses: ./.github/workflows/terraform-destroy.yml
+    secrets: inherit
+    needs: [validate-input, plan-destroy-sagemaker-pipelines]
+    if: |
+      always() && 
+      needs.validate-input.outputs.destroy-sagemaker-pipelines == 'true' && 
+      (needs.plan-destroy-sagemaker-pipelines.result == 'success' || needs.plan-destroy-sagemaker-pipelines.result == 'skipped')
+    with:
+      environment: "sagemaker-pipelines-staging"
+      terraform-environment: staging
+      terraform-working-directory: "sagemaker-pipelines/terraform/staging"
+      aws-environment: staging
+      project: ml
+      aws-role-name: mlops-github
+
+  # Destroy MLflow (independent, can run in parallel with pipelines)
+  destroy-mlflow:
+    name: Destroy MLflow
+    uses: ./.github/workflows/terraform-destroy.yml
+    secrets: inherit
+    needs: [validate-input, plan-destroy-mlflow]
+    if: |
+      always() && 
+      needs.validate-input.outputs.destroy-mlflow == 'true' && 
+      (needs.plan-destroy-mlflow.result == 'success' || needs.plan-destroy-mlflow.result == 'skipped')
+    with:
+      environment: "mlflow-staging"
+      terraform-environment: staging
+      terraform-working-directory: "mlflow/terraform/staging"
+      aws-environment: staging
+      project: ml
+      aws-role-name: mlops-github
+
+  # Destroy SageMaker Studio last (other services may depend on it)
+  destroy-sagemaker-studio:
+    name: Destroy SageMaker Studio
+    uses: ./.github/workflows/terraform-destroy.yml
+    secrets: inherit
+    needs: [validate-input, plan-destroy-sagemaker-studio, destroy-sagemaker-pipelines]
+    if: |
+      always() && 
+      needs.validate-input.outputs.destroy-sagemaker-studio == 'true' && 
+      (needs.plan-destroy-sagemaker-studio.result == 'success' || needs.plan-destroy-sagemaker-studio.result == 'skipped') &&
+      (needs.destroy-sagemaker-pipelines.result == 'success' || needs.destroy-sagemaker-pipelines.result == 'skipped')
+    with:
+      environment: "sagemaker-studio-staging"
+      terraform-environment: staging
+      terraform-working-directory: "sagemaker-studio/terraform/staging"
+      aws-environment: staging
+      project: ml
+      aws-role-name: mlops-github
+
+  summary:
+    name: Destruction Summary
+    runs-on: ubuntu-latest
+    needs: [validate-input, destroy-sagemaker-pipelines, destroy-mlflow, destroy-sagemaker-studio]
+    if: always()
+    
+    steps:
+    - name: Generate Summary
+      run: |
+        echo "## Infrastructure Destruction Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # SageMaker Pipelines
+        if [ "${{ needs.validate-input.outputs.destroy-sagemaker-pipelines }}" = "true" ]; then
+          if [ "${{ needs.destroy-sagemaker-pipelines.result }}" = "success" ]; then
+            echo "- SUCCESS **SageMaker Pipelines**: Successfully destroyed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ERROR **SageMaker Pipelines**: Destruction failed" >> $GITHUB_STEP_SUMMARY
+          fi
+        else
+          echo "- SKIPPED **SageMaker Pipelines**: Skipped" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        # MLflow
+        if [ "${{ needs.validate-input.outputs.destroy-mlflow }}" = "true" ]; then
+          if [ "${{ needs.destroy-mlflow.result }}" = "success" ]; then
+            echo "- SUCCESS **MLflow**: Successfully destroyed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ERROR **MLflow**: Destruction failed" >> $GITHUB_STEP_SUMMARY
+          fi
+        else
+          echo "- SKIPPED **MLflow**: Skipped" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        # SageMaker Studio
+        if [ "${{ needs.validate-input.outputs.destroy-sagemaker-studio }}" = "true" ]; then
+          if [ "${{ needs.destroy-sagemaker-studio.result }}" = "success" ]; then
+            echo "- SUCCESS **SageMaker Studio**: Successfully destroyed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ERROR **SageMaker Studio**: Destruction failed" >> $GITHUB_STEP_SUMMARY
+          fi
+        else
+          echo "- SKIPPED **SageMaker Studio**: Skipped" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Important Notes" >> $GITHUB_STEP_SUMMARY
+        echo "- All destroyed resources and their data are permanently deleted" >> $GITHUB_STEP_SUMMARY
+        echo "- Terraform state files have been updated to reflect the changes" >> $GITHUB_STEP_SUMMARY
+        echo "- If any destruction failed, manual cleanup may be required" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Quick Links" >> $GITHUB_STEP_SUMMARY
+        echo "- [AWS Console](https://console.aws.amazon.com/)" >> $GITHUB_STEP_SUMMARY
+        echo "- [GitHub Actions](https://github.com/${{ github.repository }}/actions)" >> $GITHUB_STEP_SUMMARY

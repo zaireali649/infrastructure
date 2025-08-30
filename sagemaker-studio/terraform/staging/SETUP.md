@@ -2,9 +2,9 @@
 
 This guide will help you set up the repository for automated SageMaker Studio deployment using GitHub Actions.
 
-## 🚀 Quick Start Checklist
+## Quick Start Checklist
 
-### ✅ Step 1: Repository Secrets Setup
+### Step 1: Repository Secrets Setup
 
 Navigate to your GitHub repository → **Settings** → **Secrets and variables** → **Actions** and add:
 
@@ -22,7 +22,7 @@ BUCKET_NAME_SUFFIX: zali-staging
 TF_BACKEND_BUCKET: your-terraform-state-bucket
 ```
 
-### ✅ Step 2: Create AWS IAM User
+### Step 2: Create AWS IAM User
 
 Create an IAM user with programmatic access and the necessary permissions.
 
@@ -58,7 +58,7 @@ Attach this policy to the user:
 }
 ```
 
-### ✅ Step 3: Update Configuration
+### Step 3: Update Configuration
 
 Edit `terraform.tfvars` to match your environment:
 
@@ -69,7 +69,7 @@ vpc_id     = "vpc-xxxxxxxxx"
 bucket_name_suffix = "your-unique-suffix"
 ```
 
-### ✅ Step 4: Deploy!
+### Step 4: Deploy!
 
 #### Option A: Automatic Deployment
 ```bash
@@ -83,7 +83,7 @@ git push origin main
 2. Select **Deploy SageMaker Studio (Staging)**
 3. Click **Run workflow** → **apply**
 
-## 🔍 Verification
+## Verification
 
 After deployment, verify everything works:
 
@@ -91,7 +91,7 @@ After deployment, verify everything works:
 2. **AWS Console**: Verify SageMaker Studio domain is created
 3. **Access Studio**: Use the output URL to access SageMaker Studio
 
-## 🔐 Security Note
+## Security Note
 
 The current setup uses AWS access keys for simplicity. For enhanced security in production environments, consider:
 

@@ -225,14 +225,14 @@ The managed service handles all maintenance automatically:
 
 | Feature | Managed MLflow | Self-Hosted MLflow |
 |---------|----------------|-------------------|
-| **Infrastructure** | ✅ Zero management | ❌ Manage ECS, RDS, ALB |
-| **Scaling** | ✅ Automatic | ❌ Manual configuration |
-| **Maintenance** | ✅ AWS handles all updates | ❌ You handle updates |
-| **Security** | ✅ Built-in best practices | ❌ Configure security |
-| **Monitoring** | ✅ Built-in CloudWatch | ❌ Set up monitoring |
-| **Costs (light usage)** | ✅ Pay-per-use ($5-20/month) | ❌ Fixed costs (~$50/month) |
-| **SageMaker Integration** | ✅ Native, seamless | ⚠️ Manual setup required |
-| **High Availability** | ✅ Built-in | ❌ Configure yourself |
+| **Infrastructure** | Zero management | Manage ECS, RDS, ALB |
+| **Scaling** | Automatic | Manual configuration |
+| **Maintenance** | AWS handles all updates | You handle updates |
+| **Security** | Built-in best practices | Configure security |
+| **Monitoring** | Built-in CloudWatch | Set up monitoring |
+| **Costs (light usage)** | Pay-per-use ($5-20/month) | Fixed costs (~$50/month) |
+| **SageMaker Integration** | Native, seamless | Manual setup required |
+| **High Availability** | Built-in | Configure yourself |
 
 ## Cost Information
 
