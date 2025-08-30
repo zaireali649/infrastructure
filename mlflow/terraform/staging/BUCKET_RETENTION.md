@@ -36,9 +36,9 @@ lifecycle {
 ### Scenario 1: Current Error Resolution
 If you're currently experiencing the bucket deletion error:
 
-1. **The protection is now built-in** - no configuration changes needed
+1. **The protection is now built-in** - no configuration files needed (variables.tf and terraform.tfvars removed for simplicity)
 
-2. **Apply the updated module**:
+2. **Apply the simplified configuration**:
    ```bash
    terraform plan
    terraform apply
