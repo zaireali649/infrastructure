@@ -7,8 +7,6 @@ plan-destroy-mlflow:
     name: Plan Destroy MLflow
     uses: ./.github/workflows/terraform-plan.yml
     secrets: inherit
-    needs: validate-input
-    if: needs.validate-input.outputs.destroy-mlflow == 'true'
     with:
       environment: "mlflow-staging"
       terraform-environment: staging
