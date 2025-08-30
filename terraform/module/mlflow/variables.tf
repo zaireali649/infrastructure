@@ -38,9 +38,13 @@ variable "tracking_server_name" {
 }
 
 variable "mlflow_version" {
-  description = "MLflow version for the tracking server"
+  description = "MLflow version for the tracking server (e.g., '3.0.0', '2.9.2')"
   type        = string
   default     = "3.0.0"
+  validation {
+    condition     = can(regex("^[0-9]+\\.[0-9]+\\.[0-9]+$", var.mlflow_version))
+    error_message = "MLflow version must be in semantic version format (e.g., '3.0.0', '2.9.2'). Note: Version changes force replacement of the tracking server."
+  }
 }
 
 variable "automatic_model_registration" {
