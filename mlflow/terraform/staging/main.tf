@@ -21,7 +21,7 @@ terraform {
 
 # Configure the AWS provider with explicit settings
 provider "aws" {
-  region = "us-east-1"
+  region = var.aws_region
   
   # Explicit configuration to avoid provider issues
   default_tags {
@@ -42,18 +42,14 @@ locals {
   project_name = "mlflow"
   environment  = "staging"
 
-  common_tags = {
+  common_tags = merge(var.additional_tags, {
     Project     = local.project_name
     Environment = local.environment
     ManagedBy   = "terraform"
     Owner       = "zali"
     Repository  = "infrastructure"
     Service     = "sagemaker-mlflow"
-    Team        = "ML-Engineering"
-    CostCenter  = "Engineering"
-    Purpose     = "ml-experiment-tracking"
-    Integration = "sagemaker-studio"
-  }
+  })
 }
 
 # SageMaker Managed MLflow module
@@ -63,22 +59,22 @@ module "mlflow" {
   # Required parameters
   project_name       = local.project_name
   environment        = local.environment
-  bucket_name_suffix = "zali-staging"
+  bucket_name_suffix = var.bucket_name_suffix
 
   # MLflow configuration
-  tracking_server_name            = null  # Auto-generate: mlflow-staging-mlflow
-  mlflow_version                 = "3.0.0"
-  automatic_model_registration   = true
-  weekly_maintenance_window_start = "TUE:03:30"
+  tracking_server_name            = var.custom_tracking_server_name
+  mlflow_version                 = var.mlflow_version
+  automatic_model_registration   = var.automatic_model_registration
+  weekly_maintenance_window_start = var.weekly_maintenance_window_start
 
   # S3 configuration
-  create_s3_bucket   = true
-  artifact_store_uri = null  # Auto-generate S3 bucket
-  kms_key_id        = null   # Use default S3 encryption
+  create_s3_bucket   = var.create_s3_bucket
+  artifact_store_uri = var.artifact_store_uri
+  kms_key_id        = var.kms_key_id
 
   # IAM configuration
-  mlflow_role_name         = null  # Auto-generate: mlflow-staging-mlflow-role
-  additional_role_policies = []
+  mlflow_role_name         = var.custom_mlflow_role_name
+  additional_role_policies = var.additional_role_policies
 
   tags = local.common_tags
 }

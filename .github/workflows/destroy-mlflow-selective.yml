@@ -1,0 +1,106 @@
+name: Destroy MLflow (Selective - Preserve S3 Bucket)
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_destruction:
+        description: 'Type "DESTROY_MLFLOW" to confirm you want to destroy MLflow compute resources (S3 bucket will be preserved)'
+        required: true
+        type: string
+      environment:
+        description: 'Environment to destroy'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+        - staging
+        - prod
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  validate-input:
+    name: Validate MLflow Destruction Request
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Validate Confirmation
+      run: |
+        if [ "${{ github.event.inputs.confirm_destruction }}" != "DESTROY_MLFLOW" ]; then
+          echo "❌ ERROR: MLflow destruction not confirmed."
+          echo "📝 You must type 'DESTROY_MLFLOW' to proceed."
+          echo "🔤 Current input: '${{ github.event.inputs.confirm_destruction }}'"
+          exit 1
+        fi
+        echo "✅ MLflow selective destruction confirmed"
+        echo "🛡️ S3 bucket and experiment data will be preserved"
+
+  destroy-mlflow-selective:
+    name: Destroy MLflow (Preserve S3)
+    uses: ./.github/workflows/terraform-destroy-mlflow-selective.yml
+    secrets: inherit
+    needs: validate-input
+    with:
+      environment: "mlflow-${{ github.event.inputs.environment }}"
+      terraform-environment: ${{ github.event.inputs.environment }}
+      terraform-working-directory: "mlflow/terraform/${{ github.event.inputs.environment }}"
+      aws-environment: ${{ github.event.inputs.environment }}
+      project: ml
+      aws-role-name: mlops-github
+
+  summary:
+    name: MLflow Destruction Summary
+    runs-on: ubuntu-latest
+    needs: [validate-input, destroy-mlflow-selective]
+    if: always()
+    
+    steps:
+    - name: Generate Summary
+      run: |
+        echo "## 🎯 MLflow Selective Destruction Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📊 Operation Status" >> $GITHUB_STEP_SUMMARY
+        
+        if [ "${{ needs.destroy-mlflow-selective.result }}" = "success" ]; then
+          echo "- ✅ **SUCCESS**: MLflow compute resources destroyed" >> $GITHUB_STEP_SUMMARY
+          echo "- 🛡️ **PRESERVED**: S3 bucket and all experiment data intact" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- ❌ **FAILED**: MLflow selective destruction failed" >> $GITHUB_STEP_SUMMARY
+          echo "- 🛡️ **PROTECTED**: S3 bucket should remain untouched due to prevent_destroy" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 💰 Cost Impact" >> $GITHUB_STEP_SUMMARY
+        echo "- **Compute costs**: Eliminated (no MLflow tracking server charges)" >> $GITHUB_STEP_SUMMARY
+        echo "- **Storage costs**: Continue (S3 bucket charges remain)" >> $GITHUB_STEP_SUMMARY
+        echo "- **Data**: All MLflow experiments and artifacts preserved" >> $GITHUB_STEP_SUMMARY
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🔄 Recreation Instructions" >> $GITHUB_STEP_SUMMARY
+        echo "To recreate MLflow tracking server later:" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+        echo "cd mlflow/terraform/${{ github.event.inputs.environment }}" >> $GITHUB_STEP_SUMMARY
+        echo "terraform plan   # Should show tracking server creation only" >> $GITHUB_STEP_SUMMARY
+        echo "terraform apply  # Recreates compute, reuses existing S3 bucket" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🔗 Quick Links" >> $GITHUB_STEP_SUMMARY
+        echo "- [S3 Console](https://s3.console.aws.amazon.com/s3/home?region=${{ env.AWS_REGION }})" >> $GITHUB_STEP_SUMMARY
+        echo "- [SageMaker Console](https://console.aws.amazon.com/sagemaker/home?region=${{ env.AWS_REGION }})" >> $GITHUB_STEP_SUMMARY
+        echo "- [AWS Console](https://console.aws.amazon.com/)" >> $GITHUB_STEP_SUMMARY
+        
+        if [ "${{ needs.destroy-mlflow-selective.result }}" = "success" ]; then
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ✨ What Happened" >> $GITHUB_STEP_SUMMARY
+          echo "1. **SageMaker MLflow Tracking Server**: Destroyed (saves money)" >> $GITHUB_STEP_SUMMARY
+          echo "2. **IAM Roles and Policies**: Cleaned up" >> $GITHUB_STEP_SUMMARY
+          echo "3. **S3 Bucket**: Protected by prevent_destroy lifecycle rule" >> $GITHUB_STEP_SUMMARY
+          echo "4. **Experiment Data**: All artifacts, models, and metadata preserved" >> $GITHUB_STEP_SUMMARY
+          echo "5. **Terraform State**: Updated to reflect selective destruction" >> $GITHUB_STEP_SUMMARY
+        fi
