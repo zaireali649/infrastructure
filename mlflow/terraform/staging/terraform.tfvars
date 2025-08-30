@@ -22,6 +22,15 @@ create_s3_bucket = true
 # create_s3_bucket = false
 # artifact_store_uri = "s3://sagemaker-studio-staging-ml-bucket-zali-staging"
 
+# S3 Bucket Retention Configuration
+# retain_bucket_on_destroy: Prevents Terraform from deleting the S3 bucket on destroy
+# This is useful to avoid the "BucketNotEmpty" error when the bucket contains artifacts
+retain_bucket_on_destroy = true
+
+# import_existing_bucket: Allows importing existing buckets if they exist but aren't in state
+# This helps when recreating infrastructure where the bucket was retained from a previous deployment
+import_existing_bucket = true
+
 # Security Configuration
 # kms_key_id = null  # Use default S3 encryption, or specify KMS key ARN for enhanced security
 
