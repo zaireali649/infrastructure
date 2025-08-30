@@ -68,11 +68,9 @@ module "mlflow" {
   weekly_maintenance_window_start = var.weekly_maintenance_window_start
 
   # S3 configuration
-  create_s3_bucket         = var.create_s3_bucket
-  artifact_store_uri       = var.artifact_store_uri
-  retain_bucket_on_destroy = var.retain_bucket_on_destroy
-  import_existing_bucket   = var.import_existing_bucket
-  kms_key_id              = var.kms_key_id
+  create_s3_bucket   = var.create_s3_bucket
+  artifact_store_uri = var.artifact_store_uri
+  kms_key_id        = var.kms_key_id
 
   # IAM configuration
   mlflow_role_name         = var.custom_mlflow_role_name

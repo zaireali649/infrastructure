@@ -60,17 +60,8 @@ variable "artifact_store_uri" {
   }
 }
 
-variable "retain_bucket_on_destroy" {
-  description = "Whether to retain the S3 bucket when destroying the infrastructure (prevent_destroy lifecycle rule)"
-  type        = bool
-  default     = true
-}
-
-variable "import_existing_bucket" {
-  description = "Whether to import an existing bucket if it exists but is not in state"
-  type        = bool
-  default     = true
-}
+# Note: S3 bucket retention is now hardcoded to prevent_destroy = true in the module
+# This protects against accidental bucket deletion and the "BucketNotEmpty" error
 
 variable "kms_key_id" {
   description = "KMS key ID for S3 bucket encryption (optional)"
