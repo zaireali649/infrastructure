@@ -15,29 +15,30 @@ api error BucketNotEmpty: The bucket you tried to delete is not empty. You must 
 
 We've implemented CloudFormation-like bucket retention functionality using Terraform lifecycle rules.
 
-## Configuration Variables
+## Configuration Approach
 
-### `retain_bucket_on_destroy` (default: `true`)
-- Prevents Terraform from deleting the S3 bucket during `terraform destroy`
-- Uses Terraform's `prevent_destroy` lifecycle rule
+### Hardcoded Bucket Protection
+- S3 bucket retention is now **hardcoded** with `prevent_destroy = true`
 - Applied to the bucket and all its configuration resources (versioning, encryption, public access block)
+- This approach is required because Terraform's `prevent_destroy` doesn't accept variables
 
-### `import_existing_bucket` (default: `true`)
-- Allows the configuration to work with existing buckets that may not be in Terraform state
-- Useful when recreating infrastructure where buckets were retained from previous deployments
+### Why Hardcoded?
+Terraform's lifecycle rules require literal boolean values, not variables:
+```hcl
+lifecycle {
+  prevent_destroy = true  # Works
+  prevent_destroy = var.retain_bucket  # Error: Variables not allowed
+}
+```
 
 ## Usage Scenarios
 
 ### Scenario 1: Current Error Resolution
 If you're currently experiencing the bucket deletion error:
 
-1. **Update your configuration** (already done in terraform.tfvars):
-   ```hcl
-   retain_bucket_on_destroy = true
-   import_existing_bucket = true
-   ```
+1. **The protection is now built-in** - no configuration files needed (variables.tf and terraform.tfvars removed for simplicity)
 
-2. **Apply the updated configuration**:
+2. **Apply the simplified configuration**:
    ```bash
    terraform plan
    terraform apply
@@ -69,31 +70,31 @@ If you have an existing bucket that needs to be managed by Terraform:
 ### Scenario 3: Force Bucket Deletion (if needed)
 If you really need to delete the bucket and its contents:
 
-1. **Temporarily disable retention**:
+1. **Edit the module directly** in `terraform/module/mlflow/main.tf`:
    ```hcl
-   retain_bucket_on_destroy = false
+   lifecycle {
+     prevent_destroy = false  # Change from true to false
+   }
    ```
+   Do this for all S3 bucket resources (4 total).
 
-2. **Apply the change**:
-   ```bash
-   terraform apply
-   ```
-
-3. **Empty the bucket** (either manually or with AWS CLI):
+2. **Empty the bucket first** (either manually or with AWS CLI):
    ```bash
    aws s3 rm s3://mlflow-staging-mlflow-artifacts-zali-staging --recursive
    aws s3api delete-bucket --bucket mlflow-staging-mlflow-artifacts-zali-staging
    ```
 
-4. **Run destroy**:
+3. **Run destroy**:
    ```bash
    terraform destroy
    ```
 
+4. **Remember to revert the changes** for future deployments.
+
 ## Best Practices
 
-1. **Keep `retain_bucket_on_destroy = true`** for production-like environments
-2. **Use `import_existing_bucket = true`** when working with potentially existing infrastructure
+1. **Bucket protection is now automatic** - no configuration needed
+2. **Import existing buckets** using the terraform import commands shown above
 3. **Backup important artifacts** before any destroy operations
 4. **Use versioning** (enabled by default) to protect against accidental overwrites
 5. **Monitor bucket costs** as retained buckets will continue to incur charges

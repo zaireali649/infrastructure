@@ -135,10 +135,10 @@ jobs:
       project: ml
       aws-role-name: mlops-github
 
-  # Destroy MLflow (independent, can run in parallel with pipelines)
+  # Destroy MLflow (selective - preserves S3 bucket and experiment data)
   destroy-mlflow:
-    name: Destroy MLflow
-    uses: ./.github/workflows/terraform-destroy.yml
+    name: Destroy MLflow (Preserve S3)
+    uses: ./.github/workflows/terraform-destroy-mlflow-selective.yml
     secrets: inherit
     needs: [validate-input, plan-destroy-mlflow]
     if: |
@@ -198,9 +198,9 @@ jobs:
         # MLflow
         if [ "${{ needs.validate-input.outputs.destroy-mlflow }}" = "true" ]; then
           if [ "${{ needs.destroy-mlflow.result }}" = "success" ]; then
-            echo "- SUCCESS **MLflow**: Successfully destroyed" >> $GITHUB_STEP_SUMMARY
+            echo "- SUCCESS **MLflow**: Compute destroyed, S3 bucket preserved" >> $GITHUB_STEP_SUMMARY
           else
-            echo "- ERROR **MLflow**: Destruction failed" >> $GITHUB_STEP_SUMMARY
+            echo "- ERROR **MLflow**: Selective destruction failed" >> $GITHUB_STEP_SUMMARY
           fi
         else
           echo "- SKIPPED **MLflow**: Skipped" >> $GITHUB_STEP_SUMMARY
@@ -219,8 +219,10 @@ jobs:
         
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### Important Notes" >> $GITHUB_STEP_SUMMARY
-        echo "- All destroyed resources and their data are permanently deleted" >> $GITHUB_STEP_SUMMARY
-        echo "- Terraform state files have been updated to reflect the changes" >> $GITHUB_STEP_SUMMARY
+        echo "- **MLflow S3 bucket preserved**: All experiment data and artifacts remain intact" >> $GITHUB_STEP_SUMMARY
+        echo "- **Compute resources destroyed**: SageMaker tracking servers and related resources deleted" >> $GITHUB_STEP_SUMMARY
+        echo "- **Terraform state updated**: States reflect the selective destruction" >> $GITHUB_STEP_SUMMARY
+        echo "- **Cost impact**: Compute charges eliminated, S3 storage charges continue" >> $GITHUB_STEP_SUMMARY
         echo "- If any destruction failed, manual cleanup may be required" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### Quick Links" >> $GITHUB_STEP_SUMMARY

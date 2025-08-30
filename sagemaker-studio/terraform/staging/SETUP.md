@@ -100,7 +100,7 @@ The current setup uses AWS access keys for simplicity. For enhanced security in 
 3. Rotating access keys regularly
 4. Using AWS Organizations SCPs for additional guardrails
 
-## 📞 Need Help?
+## Need Help?
 
 - Check the [main README](README.md) for detailed troubleshooting
 - Review the GitHub Actions logs for specific error messages

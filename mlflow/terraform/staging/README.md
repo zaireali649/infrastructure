@@ -40,10 +40,13 @@ This directory contains the Terraform configuration for deploying Amazon SageMak
    cd mlflow/terraform/staging
    ```
 
-2. **Review configuration:**
-   ```bash
-   cat terraform.tfvars
-   ```
+2. **Review configuration** (optional):
+   - All configuration is hardcoded in `main.tf` for simplicity
+   - No `variables.tf` or `terraform.tfvars` files needed
+   - Edit `main.tf` directly if you need to change values like:
+     - bucket_name_suffix: "zali-staging"
+     - mlflow_version: "3.0.0"
+     - AWS region: "us-east-1"
 
 3. **Initialize and deploy:**
    ```bash
@@ -59,27 +62,34 @@ This directory contains the Terraform configuration for deploying Amazon SageMak
 
 ## Configuration Options
 
-### Key Variables
+### Hardcoded Configuration Values
 
-| Variable | Description | Default | Staging Value |
-|----------|-------------|---------|---------------|
-| `bucket_name_suffix` | Unique suffix for S3 bucket | - | `"zali-staging"` |
-| `mlflow_version` | MLflow version | `"3.0.0"` | `"3.0.0"` |
-| `automatic_model_registration` | Auto-register models | `true` | `true` |
-| `create_s3_bucket` | Create new S3 bucket | `true` | `true` |
+All configuration is now directly in `main.tf` for simplicity:
 
-### S3 Configuration Options
+| Setting | Value | Description |
+|---------|-------|-------------|
+| `bucket_name_suffix` | `"zali-staging"` | Creates bucket: mlflow-staging-mlflow-artifacts-zali-staging |
+| `mlflow_version` | `"3.0.0"` | Changing forces replacement (30+ min rebuild) |
+| `automatic_model_registration` | `true` | Auto-register models |
+| `create_s3_bucket` | `true` | Creates new S3 bucket |
+| `aws_region` | `"us-east-1"` | AWS deployment region |
 
-#### Option 1: Create New S3 Bucket (Default)
+### Customizing Configuration
+
+To change any configuration values, edit the module block in `main.tf`:
+
 ```hcl
-create_s3_bucket = true
-# Bucket will be auto-named: mlflow-staging-mlflow-artifacts-zali-staging
-```
+module "mlflow" {
+  source = "../../../terraform/module/mlflow"
 
-#### Option 2: Use Existing S3 Bucket (e.g., from SageMaker Studio)
-```hcl
-create_s3_bucket = false
-artifact_store_uri = "s3://sagemaker-studio-staging-ml-bucket-zali-staging"
+  # Change these values as needed:
+  bucket_name_suffix = "your-suffix"
+  mlflow_version = "3.0.0"  # Changes force replacement
+  
+  # To use existing S3 bucket instead:
+  # create_s3_bucket = false
+  # artifact_store_uri = "s3://your-existing-bucket"
+}
 ```
 
 ## Usage
