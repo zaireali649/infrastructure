@@ -42,6 +42,7 @@ This directory contains the Terraform configuration for deploying Amazon SageMak
 
 2. **Review configuration** (optional):
    - All configuration is hardcoded in `main.tf` for simplicity
+   - No `variables.tf` or `terraform.tfvars` files needed
    - Edit `main.tf` directly if you need to change values like:
      - bucket_name_suffix: "zali-staging"
      - mlflow_version: "3.0.0"
