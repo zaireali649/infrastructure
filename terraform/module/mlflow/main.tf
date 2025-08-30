@@ -18,6 +18,11 @@ resource "aws_s3_bucket" "mlflow_artifacts" {
   count  = var.create_s3_bucket ? 1 : 0
   bucket = var.artifact_store_uri != null ? null : "${local.name_prefix}-mlflow-artifacts-${var.bucket_name_suffix}"
   tags   = local.common_tags
+
+  # Prevent accidental deletion when retain_bucket_on_destroy is true
+  lifecycle {
+    prevent_destroy = var.retain_bucket_on_destroy
+  }
 }
 
 resource "aws_s3_bucket_versioning" "mlflow_artifacts" {
@@ -26,6 +31,11 @@ resource "aws_s3_bucket_versioning" "mlflow_artifacts" {
 
   versioning_configuration {
     status = "Enabled"
+  }
+
+  # Prevent destroy when bucket retention is enabled
+  lifecycle {
+    prevent_destroy = var.retain_bucket_on_destroy
   }
 }
 
@@ -39,6 +49,11 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "mlflow_artifacts"
       kms_master_key_id = var.kms_key_id
     }
   }
+
+  # Prevent destroy when bucket retention is enabled
+  lifecycle {
+    prevent_destroy = var.retain_bucket_on_destroy
+  }
 }
 
 resource "aws_s3_bucket_public_access_block" "mlflow_artifacts" {
@@ -49,6 +64,11 @@ resource "aws_s3_bucket_public_access_block" "mlflow_artifacts" {
   block_public_policy     = true
   ignore_public_acls      = true
   restrict_public_buckets = true
+
+  # Prevent destroy when bucket retention is enabled
+  lifecycle {
+    prevent_destroy = var.retain_bucket_on_destroy
+  }
 }
 
 # IAM Role for MLflow Tracking Server

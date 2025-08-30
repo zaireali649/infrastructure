@@ -8,7 +8,9 @@ aws_region = "us-east-1" # Update this to your preferred region
 bucket_name_suffix = "zali-staging" # This will create bucket: mlflow-staging-mlflow-artifacts-zali-staging
 
 # MLflow Configuration
-mlflow_version                   = "3.0"      # Latest stable version
+# WARNING: Changing mlflow_version forces replacement (30+ min rebuild)
+# Always use full semantic version (e.g., "3.0.0", not "3.0")
+mlflow_version                   = "3.0.0"      # Latest stable version
 automatic_model_registration     = true         # Enable automatic model registration
 weekly_maintenance_window_start  = "Tue:03:30"  # Tuesday 3:30 AM maintenance window
 
@@ -21,6 +23,15 @@ create_s3_bucket = true
 # Option 2: Use existing S3 bucket (e.g., from SageMaker Studio)
 # create_s3_bucket = false
 # artifact_store_uri = "s3://sagemaker-studio-staging-ml-bucket-zali-staging"
+
+# S3 Bucket Retention Configuration
+# retain_bucket_on_destroy: Prevents Terraform from deleting the S3 bucket on destroy
+# This is useful to avoid the "BucketNotEmpty" error when the bucket contains artifacts
+retain_bucket_on_destroy = true
+
+# import_existing_bucket: Allows importing existing buckets if they exist but aren't in state
+# This helps when recreating infrastructure where the bucket was retained from a previous deployment
+import_existing_bucket = true
 
 # Security Configuration
 # kms_key_id = null  # Use default S3 encryption, or specify KMS key ARN for enhanced security

@@ -18,9 +18,13 @@ variable "bucket_name_suffix" {
 
 # MLflow Configuration
 variable "mlflow_version" {
-  description = "MLflow version for the tracking server"
+  description = "MLflow version for the tracking server (e.g., '3.0.0', '2.9.2')"
   type        = string
-  default     = "3.0"
+  default     = "3.0.0"
+  validation {
+    condition     = can(regex("^[0-9]+\\.[0-9]+\\.[0-9]+$", var.mlflow_version))
+    error_message = "MLflow version must be in semantic version format (e.g., '3.0.0', '2.9.2'). Note: Version changes force replacement of the tracking server."
+  }
 }
 
 variable "automatic_model_registration" {
@@ -54,6 +58,18 @@ variable "artifact_store_uri" {
     condition = var.artifact_store_uri == null || can(regex("^s3://[a-z0-9.-]+(/.*)?$", var.artifact_store_uri))
     error_message = "Artifact store URI must be a valid S3 URI (e.g., s3://bucket-name/path)."
   }
+}
+
+variable "retain_bucket_on_destroy" {
+  description = "Whether to retain the S3 bucket when destroying the infrastructure (prevent_destroy lifecycle rule)"
+  type        = bool
+  default     = true
+}
+
+variable "import_existing_bucket" {
+  description = "Whether to import an existing bucket if it exists but is not in state"
+  type        = bool
+  default     = true
 }
 
 variable "kms_key_id" {
