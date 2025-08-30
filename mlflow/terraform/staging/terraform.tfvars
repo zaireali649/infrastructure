@@ -8,6 +8,8 @@ aws_region = "us-east-1" # Update this to your preferred region
 bucket_name_suffix = "zali-staging" # This will create bucket: mlflow-staging-mlflow-artifacts-zali-staging
 
 # MLflow Configuration
+# WARNING: Changing mlflow_version forces replacement (30+ min rebuild)
+# Always use full semantic version (e.g., "3.0.0", not "3.0")
 mlflow_version                   = "3.0.0"      # Latest stable version
 automatic_model_registration     = true         # Enable automatic model registration
 weekly_maintenance_window_start  = "Tue:03:30"  # Tuesday 3:30 AM maintenance window
