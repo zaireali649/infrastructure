@@ -80,18 +80,18 @@ jobs:
       run: |
         # Initialize with backend configuration from secrets if provided
         if [ -n "${{ secrets.TF_BACKEND_BUCKET }}" ]; then
-          echo "🔧 Using S3 backend: ${{ secrets.TF_BACKEND_BUCKET }}"
+          echo "Using S3 backend: ${{ secrets.TF_BACKEND_BUCKET }}"
           # Convert mlflow/terraform/staging to mlflow/staging
           state_key=$(echo "${{ inputs.terraform-working-directory }}" | sed 's|/terraform||')
-          echo "📁 State key: ${state_key}/terraform.tfstate"
-          echo "🌍 Region: ${{ env.AWS_REGION }}"
+          echo "State key: ${state_key}/terraform.tfstate"
+          echo "Region: ${{ env.AWS_REGION }}"
           
           terraform init \
             -backend-config="bucket=${{ secrets.TF_BACKEND_BUCKET }}" \
             -backend-config="key=${state_key}/terraform.tfstate" \
             -backend-config="region=${{ env.AWS_REGION }}"
         else
-          echo "⚠️ WARNING: Using local backend (not recommended for production)"
+          echo "WARNING: Using local backend (not recommended for production)"
           terraform init -migrate-state -input=false || terraform init
         fi
     
@@ -110,29 +110,29 @@ jobs:
     
     - name: Pre-destroy Check
       run: |
-        echo "🚀 Starting MLflow SELECTIVE DESTROY operation..."
-        echo "🛡️ PRESERVING S3 bucket and all MLflow experiment data!"
+        echo "Starting MLflow SELECTIVE DESTROY operation..."
+        echo "PRESERVING S3 bucket and all MLflow experiment data!"
         echo ""
-        echo "📋 Configuration:"
+        echo "Configuration:"
         echo "  - Environment: ${{ inputs.environment }}"
         echo "  - Project: ${{ inputs.project }}"
         echo "  - Region: ${{ env.AWS_REGION }}"
         echo "  - Bucket suffix: ${{ env.TF_VAR_bucket_name_suffix }}"
         echo ""
-        echo "🗂️ Resources to DESTROY:"
-        echo "  ❌ SageMaker MLflow tracking server"
-        echo "  ❌ IAM roles and policies"
+        echo "Resources to DESTROY:"
+        echo "  SageMaker MLflow tracking server"
+        echo "  IAM roles and policies"
         echo ""
-        echo "🛡️ Resources to PRESERVE:"
-        echo "  ✅ S3 bucket: mlflow-staging-mlflow-artifacts-${{ env.TF_VAR_bucket_name_suffix }}"
-        echo "  ✅ S3 bucket configuration (versioning, encryption, etc.)"
-        echo "  ✅ ALL experiment data and artifacts"
+        echo "Resources to PRESERVE:"
+        echo "  S3 bucket: mlflow-staging-mlflow-artifacts-${{ env.TF_VAR_bucket_name_suffix }}"
+        echo "  S3 bucket configuration (versioning, encryption, etc.)"
+        echo "  ALL experiment data and artifacts"
         echo ""
-        echo "⏱️ Selective destroy operation may take 5-10 minutes..."
+        echo "Selective destroy operation may take 5-10 minutes..."
     
     - name: List Current Resources
       run: |
-        echo "📊 Current Terraform state resources:"
+        echo "Current Terraform state resources:"
         terraform state list || echo "No resources found or state not accessible"
     
     - name: Check S3 Bucket Status
@@ -141,17 +141,17 @@ jobs:
         echo "🪣 Checking S3 bucket: $bucket_name"
         
         if aws s3api head-bucket --bucket "$bucket_name" 2>/dev/null; then
-          echo "✅ S3 bucket exists and is accessible"
-          echo "📊 Bucket contents:"
+          echo "S3 bucket exists and is accessible"
+          echo "Bucket contents:"
           aws s3 ls "s3://$bucket_name" --human-readable --summarize || echo "Bucket is empty or access denied"
         else
-          echo "⚠️ S3 bucket not found or not accessible"
+          echo "S3 bucket not found or not accessible"
         fi
     
     - name: Plan Selective Destroy
       id: plan
       run: |
-        echo "📋 Planning selective destruction (preserving S3 bucket)..."
+        echo "Planning selective destruction (preserving S3 bucket)..."
         
         # Create targeted destroy plan
         terraform plan -destroy \
@@ -162,7 +162,7 @@ jobs:
           -target=module.mlflow.aws_iam_role.mlflow_role \
           -no-color -input=false -out=tfdestroy-selective
         
-        echo "✅ Selective destroy plan created"
+        echo "Selective destroy plan created"
     
     - name: Upload Selective Destroy Plan
       if: steps.plan.outcome == 'success'
@@ -175,54 +175,54 @@ jobs:
     - name: Execute Selective Destroy
       id: destroy
       run: |
-        echo "🚨 Executing selective destruction..."
-        echo "⚠️ This will destroy compute resources but preserve S3 bucket!"
+        echo "Executing selective destruction..."
+        echo "This will destroy compute resources but preserve S3 bucket!"
         
         # Apply the selective destroy plan
         terraform apply -auto-approve tfdestroy-selective
         
-        echo "✅ Selective destroy completed!"
+        echo "Selective destroy completed!"
     
     - name: Verify S3 Bucket Preservation
       if: steps.destroy.outcome == 'success'
       run: |
         bucket_name="mlflow-staging-mlflow-artifacts-${{ env.TF_VAR_bucket_name_suffix }}"
-        echo "🔍 Verifying S3 bucket preservation..."
+        echo "Verifying S3 bucket preservation..."
         
         if aws s3api head-bucket --bucket "$bucket_name" 2>/dev/null; then
-          echo "✅ SUCCESS: S3 bucket preserved!"
-          echo "🗂️ Bucket contents still available:"
+          echo "SUCCESS: S3 bucket preserved!"
+          echo "Bucket contents still available:"
           aws s3 ls "s3://$bucket_name" --human-readable --summarize || echo "Bucket is empty"
         else
-          echo "❌ ERROR: S3 bucket not found! This should not happen."
+          echo "ERROR: S3 bucket not found! This should not happen."
           exit 1
         fi
     
     - name: List Remaining Resources
       if: steps.destroy.outcome == 'success'
       run: |
-        echo "📊 Remaining Terraform resources (should be S3 bucket only):"
+        echo "Remaining Terraform resources (should be S3 bucket only):"
         terraform state list || echo "No resources remaining in state"
     
     - name: Selective Destroy Summary
       if: steps.destroy.outcome == 'success'
       run: |
-        echo "## 🎉 MLflow Selective Destroy Complete!" >> $GITHUB_STEP_SUMMARY
+        echo "## MLflow Selective Destroy Complete!" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### ✅ Successfully Destroyed" >> $GITHUB_STEP_SUMMARY
+        echo "### Successfully Destroyed" >> $GITHUB_STEP_SUMMARY
         echo "- **SageMaker MLflow Tracking Server**: Deleted (saves compute costs)" >> $GITHUB_STEP_SUMMARY
         echo "- **IAM Roles and Policies**: Cleaned up" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 🛡️ Successfully Preserved" >> $GITHUB_STEP_SUMMARY
+        echo "### Successfully Preserved" >> $GITHUB_STEP_SUMMARY
         echo "- **S3 Bucket**: \`mlflow-staging-mlflow-artifacts-${{ env.TF_VAR_bucket_name_suffix }}\`" >> $GITHUB_STEP_SUMMARY
         echo "- **Experiment Data**: All MLflow experiments and artifacts intact" >> $GITHUB_STEP_SUMMARY
         echo "- **Bucket Configuration**: Versioning, encryption, access controls preserved" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 💰 Cost Impact" >> $GITHUB_STEP_SUMMARY
+        echo "### Cost Impact" >> $GITHUB_STEP_SUMMARY
         echo "- **Compute costs eliminated**: No charges for tracking server" >> $GITHUB_STEP_SUMMARY
         echo "- **Storage costs continue**: S3 bucket charges remain" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 🔄 Recreation Instructions" >> $GITHUB_STEP_SUMMARY
+        echo "### Recreation Instructions" >> $GITHUB_STEP_SUMMARY
         echo "To recreate the MLflow tracking server later:" >> $GITHUB_STEP_SUMMARY
         echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
         echo "# The S3 bucket will be automatically reused" >> $GITHUB_STEP_SUMMARY
@@ -230,22 +230,22 @@ jobs:
         echo "terraform apply  # Recreates compute, reuses existing data" >> $GITHUB_STEP_SUMMARY
         echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 🔗 Quick Links" >> $GITHUB_STEP_SUMMARY
+        echo "### Quick Links" >> $GITHUB_STEP_SUMMARY
         echo "- [S3 Console](https://s3.console.aws.amazon.com/s3/buckets/mlflow-staging-mlflow-artifacts-${{ env.TF_VAR_bucket_name_suffix }})" >> $GITHUB_STEP_SUMMARY
         echo "- [AWS Console](https://console.aws.amazon.com/)" >> $GITHUB_STEP_SUMMARY
     
     - name: Cleanup on Failure
       if: failure()
       run: |
-        echo "❌ ERROR: Selective destroy operation failed!" >> $GITHUB_STEP_SUMMARY
+        echo "ERROR: Selective destroy operation failed!" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 🔍 Troubleshooting" >> $GITHUB_STEP_SUMMARY
+        echo "### Troubleshooting" >> $GITHUB_STEP_SUMMARY
         echo "- Check the logs above for specific error messages" >> $GITHUB_STEP_SUMMARY
         echo "- Some resources may have dependencies preventing deletion" >> $GITHUB_STEP_SUMMARY
         echo "- S3 bucket should remain untouched due to prevent_destroy" >> $GITHUB_STEP_SUMMARY
         echo "- Manual cleanup may be required via AWS Console" >> $GITHUB_STEP_SUMMARY
         echo "- Terraform state may be partially updated" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 📞 Support" >> $GITHUB_STEP_SUMMARY
+        echo "### Support" >> $GITHUB_STEP_SUMMARY
         echo "- Review the [selective destroy documentation](mlflow/terraform/staging/DESTROY_SELECTIVE.md)" >> $GITHUB_STEP_SUMMARY
         echo "- Check [AWS Console](https://console.aws.amazon.com/) for resource status" >> $GITHUB_STEP_SUMMARY

@@ -198,12 +198,12 @@ jobs:
         # MLflow
         if [ "${{ needs.validate-input.outputs.destroy-mlflow }}" = "true" ]; then
           if [ "${{ needs.destroy-mlflow.result }}" = "success" ]; then
-            echo "- ✅ SUCCESS **MLflow**: Compute destroyed, S3 bucket preserved" >> $GITHUB_STEP_SUMMARY
+            echo "- SUCCESS **MLflow**: Compute destroyed, S3 bucket preserved" >> $GITHUB_STEP_SUMMARY
           else
-            echo "- ❌ ERROR **MLflow**: Selective destruction failed" >> $GITHUB_STEP_SUMMARY
+            echo "- ERROR **MLflow**: Selective destruction failed" >> $GITHUB_STEP_SUMMARY
           fi
         else
-          echo "- ⏭️ SKIPPED **MLflow**: Skipped" >> $GITHUB_STEP_SUMMARY
+          echo "- SKIPPED **MLflow**: Skipped" >> $GITHUB_STEP_SUMMARY
         fi
         
         # SageMaker Studio

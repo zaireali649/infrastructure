@@ -3,16 +3,16 @@
 This guide shows how to destroy MLflow compute resources while preserving the S3 bucket and all experiment data.
 
 ## What Gets Destroyed
-- ✅ SageMaker MLflow Tracking Server (compute)
-- ✅ IAM Role and Policies (can be recreated)
-- ✅ IAM Role Policy Attachments
+- SageMaker MLflow Tracking Server (compute)
+- IAM Role and Policies (can be recreated)
+- IAM Role Policy Attachments
 
 ## What Gets Preserved
-- 🛡️ S3 Bucket (`mlflow-staging-mlflow-artifacts-zali-staging`)
-- 🛡️ S3 Bucket Versioning Configuration
-- 🛡️ S3 Bucket Encryption Configuration  
-- 🛡️ S3 Bucket Public Access Block
-- 🛡️ All MLflow Experiment Data and Artifacts
+- S3 Bucket (`mlflow-staging-mlflow-artifacts-zali-staging`)
+- S3 Bucket Versioning Configuration
+- S3 Bucket Encryption Configuration  
+- S3 Bucket Public Access Block
+- All MLflow Experiment Data and Artifacts
 
 ## Destroy Commands
 
@@ -84,7 +84,7 @@ terraform apply  # Recreates compute resources, reuses existing bucket
 
 ## Benefits of This Approach
 
-- 💰 **Cost Savings**: No compute charges for tracking server
-- 🛡️ **Data Preservation**: All experiments and models remain intact
-- ⚡ **Fast Recreation**: When needed, only compute resources need to be recreated
-- 🔄 **Reversible**: Can easily bring back the tracking server later
+- **Cost Savings**: No compute charges for tracking server
+- **Data Preservation**: All experiments and models remain intact
+- **Fast Recreation**: When needed, only compute resources need to be recreated
+- **Reversible**: Can easily bring back the tracking server later

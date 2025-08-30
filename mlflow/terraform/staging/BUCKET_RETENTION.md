@@ -26,8 +26,8 @@ We've implemented CloudFormation-like bucket retention functionality using Terra
 Terraform's lifecycle rules require literal boolean values, not variables:
 ```hcl
 lifecycle {
-  prevent_destroy = true  # ✅ Works
-  prevent_destroy = var.retain_bucket  # ❌ Error: Variables not allowed
+  prevent_destroy = true  # Works
+  prevent_destroy = var.retain_bucket  # Error: Variables not allowed
 }
 ```
 

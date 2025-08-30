@@ -69,7 +69,7 @@ All configuration is now directly in `main.tf` for simplicity:
 | Setting | Value | Description |
 |---------|-------|-------------|
 | `bucket_name_suffix` | `"zali-staging"` | Creates bucket: mlflow-staging-mlflow-artifacts-zali-staging |
-| `mlflow_version` | `"3.0.0"` | ⚠️ Changing forces replacement (30+ min rebuild) |
+| `mlflow_version` | `"3.0.0"` | Changing forces replacement (30+ min rebuild) |
 | `automatic_model_registration` | `true` | Auto-register models |
 | `create_s3_bucket` | `true` | Creates new S3 bucket |
 | `aws_region` | `"us-east-1"` | AWS deployment region |
@@ -84,7 +84,7 @@ module "mlflow" {
 
   # Change these values as needed:
   bucket_name_suffix = "your-suffix"
-  mlflow_version = "3.0.0"  # ⚠️ Changes force replacement
+  mlflow_version = "3.0.0"  # Changes force replacement
   
   # To use existing S3 bucket instead:
   # create_s3_bucket = false
