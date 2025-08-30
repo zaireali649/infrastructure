@@ -3,14 +3,15 @@ name: Destroy MLflow
 on:
   pull_request:
 
-plan-destroy-mlflow:
-    name: Plan Destroy MLflow
-    uses: ./.github/workflows/terraform-plan.yml
-    secrets: inherit
-    with:
-      environment: "mlflow-staging"
-      terraform-environment: staging
-      terraform-working-directory: "mlflow/terraform/staging"
-      aws-environment: staging
-      project: ml
-      aws-role-name: mlops-github
+jobs:
+  plan-destroy-mlflow:
+      name: Plan Destroy MLflow
+      uses: ./.github/workflows/terraform-plan.yml
+      secrets: inherit
+      with:
+        environment: "mlflow-staging"
+        terraform-environment: staging
+        terraform-working-directory: "mlflow/terraform/staging"
+        aws-environment: staging
+        project: ml
+        aws-role-name: mlops-github
